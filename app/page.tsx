@@ -1,0 +1,90 @@
+"use client";
+
+import { useAtom } from "jotai";
+import { roomListState } from "@/app/atom/lobbyAtom";
+import RoomModal from "./components/modals/RoomModal";
+
+export const Header = () => {
+  return (
+    <div
+      className="relative w-full h-[20%]
+                flex items-center justify-center"
+    >
+      <h1 className="text-5xl">Title</h1>
+    </div>
+  );
+};
+
+export const Section = () => {
+  const [roomList] = useAtom(roomListState);
+
+  const enterRoom = (id: string, capacity: number, maxCapacity: number) => {
+    if (capacity === maxCapacity) {
+      alert("인원이 꽉 찼습니다!");
+      return;
+    }
+  };
+
+  return (
+    <div
+      className="w-full h-[85%]
+                flex flex-col items-center"
+    >
+      <div
+        className="w-[95%] mb-3
+                  flex justify-end"
+      >
+        <RoomModal />
+        <button
+          className="px-6 py-2 rounded-sm
+                  text-lg bg-zinc-900
+                  hover:bg-zinc-800"
+        >
+          코드 입력
+        </button>
+      </div>
+
+      <div
+        id="room-container"
+        className="grid grid-cols-3 gap-3 content-start
+                  w-[95%] h-auto select-none"
+      >
+        {roomList.map((room) => (
+          <div
+            role="button"
+            onClick={() => enterRoom(room.id, room.capacity, room.maxCapacity)}
+            className={`relative h-[150px]
+                      flex justify-center flex-col
+                      rounded-lg
+                      ${room.played ? "bg-zinc-950" : "bg-zinc-900 hover:bg-zinc-800"}`}
+            key={room.id}
+          >
+            <h2 className="text-2xl font-bold ml-5">{room.roomName}</h2>
+            <p className="text ml-5">| {room.subject}</p>
+            <div
+              className={`absolute right-3 bottom-2
+                        text ml-5 px-3 py-1 rounded-2xl
+                        flex items-center justify-center
+                        ${room.capacity === room.maxCapacity ? "bg-red-900" : "bg-stone-700"}`}
+            >
+              {room.capacity} | {room.maxCapacity}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default function Home() {
+  return (
+    <div
+      className="w-full h-full
+                flex flex-col
+                font-[Pretendard]"
+    >
+      <Header />
+      <Section />
+    </div>
+  );
+}
