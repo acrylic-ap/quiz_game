@@ -10,7 +10,7 @@ export const Header = () => {
       className="relative w-full h-[20%]
                 flex items-center justify-center"
     >
-      <h1 className="text-5xl">Title</h1>
+      <h1 className="text-5xl font-bold">스피드 퀴즈</h1>
     </div>
   );
 };
@@ -18,7 +18,17 @@ export const Header = () => {
 export const Section = () => {
   const [roomList] = useAtom(roomListState);
 
-  const enterRoom = (id: string, capacity: number, maxCapacity: number) => {
+  const enterRoom = (
+    id: string,
+    capacity: number,
+    maxCapacity: number,
+    played: boolean,
+  ) => {
+    if (played) {
+      alert("이미 진행 중인 방입니다!");
+      return;
+    }
+
     if (capacity === maxCapacity) {
       alert("인원이 꽉 찼습니다!");
       return;
@@ -52,7 +62,9 @@ export const Section = () => {
         {roomList.map((room) => (
           <div
             role="button"
-            onClick={() => enterRoom(room.id, room.capacity, room.maxCapacity)}
+            onClick={() =>
+              enterRoom(room.id, room.capacity, room.maxCapacity, room.played)
+            }
             className={`relative h-[150px]
                       flex justify-center flex-col
                       rounded-lg
