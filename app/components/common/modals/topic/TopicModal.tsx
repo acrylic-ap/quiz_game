@@ -151,34 +151,42 @@ export default function TopicModal() {
         overflow-y-auto overflow-x-none
         no-scrollbar"
         >
-          {filteredTopicList.map((room) => (
-            <div
-              role="button"
-              className={`relative h-full py-4
+          {filteredTopicList.length ? (
+            filteredTopicList.map((room) => (
+              <div
+                role="button"
+                className={`relative h-full py-4
                       flex flex-col 
                       hover:bg-zinc-800
                       ${picked.has(room.id) ? "bg-zinc-900" : "bg-zinc-950"}`}
-              key={room.id}
-              onClick={() => chooseTopic(room.id, room.topicName)}
-            >
-              <div className="flex items-center">
-                <div
-                  className="w-fit text ml-3
+                key={room.id}
+                onClick={() => chooseTopic(room.id, room.topicName)}
+              >
+                <div className="flex items-center">
+                  <div
+                    className="w-fit text ml-3
                 border rounded
                 px-2 py-0.5"
-                >
-                  {room.category}
+                  >
+                    {room.category}
+                  </div>
+                  <div className="absolute right-3 flex items-center">
+                    <div className="ml-3">{typeImage(room.type)}</div>
+                  </div>
                 </div>
-                <div className="absolute right-3 flex items-center">
-                  <div className="ml-3">{typeImage(room.type)}</div>
-                </div>
+                <h2 className="text-lg font-bold mt-1 ml-3 mx-2">
+                  {room.topicName}
+                </h2>
+                <p className="text text-zinc-400 ml-3 mx-2">
+                  {room.description}
+                </p>
               </div>
-              <h2 className="text-lg font-bold mt-1 ml-3 mx-2">
-                {room.topicName}
-              </h2>
-              <p className="text text-zinc-400 ml-3 mx-2">{room.description}</p>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text text-zinc-400 ml-3 mx-2">
+              해당하는 주제가 없습니다.
+            </p>
+          )}
         </div>
 
         <div className="flex justify-center">

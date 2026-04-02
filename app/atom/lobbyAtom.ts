@@ -46,7 +46,7 @@ export const roomListState = atom<Room[]>([
     id: "ASHF2384HSB1",
     roomName: "들어오지 마",
     topic: "2010년대 노래 맞히기",
-    capacity: 8,
+    capacity: 7,
     maxCapacity: 8,
     played: true,
   },
