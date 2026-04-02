@@ -3,7 +3,7 @@ import "./globals.css";
 import { Provider } from "jotai";
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
-import TopicModal from "./components/modals/topic_modal/TopicModal";
+import TopicModal from "./components/modals/topic/TopicModal";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 

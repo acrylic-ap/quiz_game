@@ -39,7 +39,7 @@ export default function RoomCodeModal() {
           <input
             type="text"
             id="room-name"
-            placeholder="코드를 입력하세요"
+            placeholder="비번방 코드를 입력하세요"
             className="bg-zinc-900 text-zinc-100
               rounded pl-2 py-3
               outline-none

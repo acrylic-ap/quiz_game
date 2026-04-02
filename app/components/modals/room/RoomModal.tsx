@@ -13,9 +13,12 @@ import { useState } from "react";
 import { StepSlider } from "./components/Slider";
 import { useAtom } from "jotai";
 import { showTopicModalState } from "@/app/atom/modalAtom";
+import { pickedTopicAtom } from "@/app/atom/topicAtom";
 
 export default function RoomModal() {
   const [, setShowTopicModal] = useAtom(showTopicModalState);
+
+  const [pickedTopic] = useAtom(pickedTopicAtom);
 
   const DECISION_LIST = {
     random: { label: "랜덤", next: "vote" },
@@ -43,6 +46,17 @@ export default function RoomModal() {
       alert("방 제목을 입력하세요.");
       return;
     }
+  };
+
+  const showTopic = () => {
+    if (!pickedTopic.size) return "주제가 선택되지 않았습니다.";
+
+    const firstTopic = pickedTopic.values().next().value;
+
+    if (!firstTopic) return "주제가 선택되지 않았습니다.";
+
+    if (pickedTopic.size === 1) return firstTopic;
+    else return `${firstTopic} 외 ${pickedTopic.size - 1}개`;
   };
 
   return (
@@ -120,7 +134,7 @@ export default function RoomModal() {
 항시 랜덤: 매 라운드마다 무작위 변경`}
               </div>
             )}
-            <label>맞춤법 퀴즈 외 2개</label>
+            <label>{showTopic()}</label>
             <div className="absolute right-0">
               <button
                 className="px-3 py-1 mr-1 rounded

@@ -2,8 +2,8 @@
 
 import { useAtom } from "jotai";
 import { roomListState } from "@/app/atom/lobbyAtom";
-import RoomModal from "./components/modals/room_modal/RoomModal";
-import RoomCodeModal from "./components/modals/room_code_modal/RoomCodeModal";
+import RoomModal from "./components/modals/room/RoomModal";
+import RoomCodeModal from "./components/modals/room_code/RoomCodeModal";
 
 export const Header = () => {
   return (
@@ -70,11 +70,11 @@ export const Section = () => {
             <p className="text ml-5">| {room.topic}</p>
             <div
               className={`absolute right-3 bottom-2
-                        text ml-5 px-3 py-1 rounded-2xl
+                        text ml-5 px-3 py-1
                         flex items-center justify-center
-                        ${room.capacity === room.maxCapacity ? "bg-red-900" : "bg-stone-700"}`}
+                        ${room.capacity === room.maxCapacity ? "text-red-500" : "text-white"}`}
             >
-              {room.capacity} | {room.maxCapacity}
+              {room.capacity} / {room.maxCapacity}
             </div>
           </div>
         ))}

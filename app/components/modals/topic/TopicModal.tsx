@@ -58,6 +58,15 @@ export default function TopicModal() {
     });
   };
 
+  const filteredTopicList = topicList.filter((topic) => {
+    if (category !== "all" && topic.category !== category) return false;
+    if (!showTypeImage && topic.type === "image") return false;
+    if (!showTypeArticle && topic.type === "article") return false;
+    if (!showTypeSound && topic.type === "sound") return false;
+    if (topicName && !topic.topicName.includes(topicName)) return false;
+    return true;
+  });
+
   return (
     <Dialog open={showTopicModal} onOpenChange={setShowTopicModal}>
       <DialogContent className="bg-zinc-950 text-zinc-100 select-none">
@@ -74,7 +83,7 @@ export default function TopicModal() {
             <input
               type="text"
               id="room-name"
-              placeholder="주제를 입력하세요"
+              placeholder="2자 이상 입력해 주세요"
               className="w-[85%] text-zinc-100
               pl-3 py-3
               outline-none
@@ -100,9 +109,9 @@ export default function TopicModal() {
                 value={category}
                 className="ml-2 outline-none bg-zinc-900"
               >
-                <option>분류</option>
-                <option>국어</option>
-                <option>노래</option>
+                <option value="all">분류</option>
+                <option value="국어">국어</option>
+                <option value="노래">노래</option>
               </select>
               <label className="ml-2 text">문제 유형</label>
               <button
@@ -138,17 +147,17 @@ export default function TopicModal() {
 
         <div
           className="grid grid-cols-2
-        w-full h-[200px] bg-zinc-700
+        w-full h-[200px]
         overflow-y-auto overflow-x-none
         no-scrollbar"
         >
-          {topicList.map((room) => (
+          {filteredTopicList.map((room) => (
             <div
               role="button"
               className={`relative h-full py-4
                       flex flex-col 
                       hover:bg-zinc-800
-                      ${picked.has(room.id) ? "bg-zinc-950" : "bg-zinc-900"}`}
+                      ${picked.has(room.id) ? "bg-zinc-900" : "bg-zinc-950"}`}
               key={room.id}
               onClick={() => chooseTopic(room.id, room.topicName)}
             >
@@ -160,15 +169,8 @@ export default function TopicModal() {
                 >
                   {room.category}
                 </div>
-                <div className="absolute right-3 flex">
+                <div className="absolute right-3 flex items-center">
                   <div className="ml-3">{typeImage(room.type)}</div>
-                  <div className="ml-2">
-                    {room.questionType === "select" ? (
-                      <Check size={21} />
-                    ) : (
-                      <FormInput size={21} />
-                    )}
-                  </div>
                 </div>
               </div>
               <h2 className="text-lg font-bold mt-1 ml-3 mx-2">
