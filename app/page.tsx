@@ -2,7 +2,8 @@
 
 import { useAtom } from "jotai";
 import { roomListState } from "@/app/atom/lobbyAtom";
-import RoomModal from "./components/modals/RoomModal";
+import RoomModal from "./components/modals/room_modal/RoomModal";
+import RoomCodeModal from "./components/modals/room_code_modal/RoomCodeModal";
 
 export const Header = () => {
   return (
@@ -45,13 +46,7 @@ export const Section = () => {
                   flex justify-end"
       >
         <RoomModal />
-        <button
-          className="px-6 py-2 rounded-sm
-                  text-lg bg-zinc-900
-                  hover:bg-zinc-800"
-        >
-          코드 입력
-        </button>
+        <RoomCodeModal />
       </div>
 
       <div
@@ -72,7 +67,7 @@ export const Section = () => {
             key={room.id}
           >
             <h2 className="text-2xl font-bold ml-5">{room.roomName}</h2>
-            <p className="text ml-5">| {room.subject}</p>
+            <p className="text ml-5">| {room.topic}</p>
             <div
               className={`absolute right-3 bottom-2
                         text ml-5 px-3 py-1 rounded-2xl
