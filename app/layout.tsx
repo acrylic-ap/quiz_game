@@ -5,6 +5,7 @@ import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import TopicModal from "./components/common/modals/topic/TopicModal";
 import AlertModal from "./components/common/modals/alert/AlertModal";
+import RoomModal from "./components/common/modals/room/RoomModal";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -35,6 +36,7 @@ export default function RootLayout({
         <Provider>
           <TopicModal />
           <AlertModal />
+          <RoomModal />
           {children}
         </Provider>
       </body>

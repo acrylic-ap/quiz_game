@@ -5,17 +5,18 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { CircleQuestionMark, User } from "lucide-react";
 import { useState } from "react";
 import { StepSlider } from "./components/Slider";
 import { useAtom } from "jotai";
-import { showTopicModalState } from "@/app/atom/modalAtom";
+import { setRoomModalState, showTopicModalState } from "@/app/atom/modalAtom";
 import { pickedTopicAtom } from "@/app/atom/topicAtom";
 
 export default function RoomModal() {
+  const [roomDescription, setRoomDescription] = useAtom(setRoomModalState);
+
   const [, setShowTopicModal] = useAtom(showTopicModalState);
 
   const [pickedTopic] = useAtom(pickedTopicAtom);
@@ -59,21 +60,22 @@ export default function RoomModal() {
     else return `${firstTopic} 외 ${pickedTopic.size - 1}개`;
   };
 
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <button
-          className="px-6 py-2 mr-2 rounded-sm
-                  text-lg select-none bg-zinc-900
-                  hover:bg-zinc-800"
-        >
-          방 생성
-        </button>
-      </DialogTrigger>
+  const isOpen: boolean = !!roomDescription;
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      // 모달을 닫을 때는 무조건 null로 초기화
+      setRoomDescription(null);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="bg-zinc-950 text-zinc-100 select-none">
         <DialogHeader className="text-center mt-5">
-          <DialogTitle className="text-2xl">방 생성</DialogTitle>
+          <DialogTitle className="text-2xl">
+            {roomDescription === "create" ? "방 생성" : "방 수정"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -209,7 +211,7 @@ export default function RoomModal() {
               hover:bg-zinc-800"
             onClick={createRoom}
           >
-            방 생성
+            {roomDescription === "create" ? "생성" : "수정"}
           </button>
         </div>
       </DialogContent>

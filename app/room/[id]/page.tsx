@@ -1,9 +1,16 @@
 "use client";
 
-import { Send, SquareArrowRightExit } from "lucide-react";
+import {
+  Eye,
+  EyeClosed,
+  Send,
+  Settings,
+  SquareArrowRightExit,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-// import { useAtom } from "jotai"; // 필요시 주석 해제하여 사용
+import { useAtom } from "jotai";
 import { useEffect, useState, useRef } from "react";
+import { setRoomModalState } from "@/app/atom/modalAtom";
 
 // --- 임시 데이터 (나중에 DB나 소켓에서 가져올 데이터) ---
 const dummyUsers = [
@@ -11,22 +18,6 @@ const dummyUsers = [
   { id: 2, name: "박리액트", avatar: "⚛️", isReady: true, isAdmin: false },
   { id: 3, name: "이테일", avatar: "🎨", isReady: false, isAdmin: false },
   { id: 4, name: "최조타이", avatar: "👻", isReady: false, isAdmin: false },
-];
-
-const dummyMessages = [
-  {
-    id: 1,
-    user: "김개발",
-    text: "ㅎㅇ",
-    time: "10:30 PM",
-  },
-  { id: 2, user: "박리액트", text: "ㅎㅇㅎㅇ", time: "10:31 PM" },
-  {
-    id: 3,
-    user: "시스템",
-    text: "이테일 님이 입장하셨습니다.",
-    time: "10:32 PM",
-  },
 ];
 
 // =========================================================
@@ -64,7 +55,11 @@ const Header = () => {
   );
 };
 
+// ----------------------------------------------------------------
+
 export const RoomInfo = () => {
+  const [, setRoomDescription] = useAtom(setRoomModalState);
+
   return (
     <div
       className="h-20 flex flex-row items-center
@@ -72,18 +67,26 @@ export const RoomInfo = () => {
     border border-zinc-800 px-6 shadow-xl"
     >
       <div className="text-zinc-400 flex items-center gap-3">
-        <span className="text-xl font-bold text-zinc-100">선택 주제</span>
+        {true ? <Eye size={20} /> : <EyeClosed size={20} />}
+        <span className="text-xl font-bold text-zinc-100">주제</span>
         <label className="text-lg">맞춤법 퀴즈 외 3개</label>
       </div>
 
-      <div className=""></div>
+      <div className="h-fit flex">
+        <button onClick={() => setRoomDescription("edit")}>
+          <Settings
+            size={22}
+            className="text-zinc-400 hover:text-zinc-200 transition"
+          />
+        </button>
+      </div>
     </div>
   );
 };
 
 const UserList = () => {
   return (
-    <div className="flex-1 min-w-[300px] bg-zinc-900 rounded border border-zinc-800 p-5 flex flex-col gap-4 shadow-xl">
+    <div className="flex-1 min-w-[300px] bg-zinc-900 rounded-lg border border-zinc-800 p-4 flex flex-col gap-4 shadow-xl">
       <h2 className="text-lg font-semibold text-zinc-300 flex items-center gap-2">
         유저
       </h2>
@@ -92,8 +95,8 @@ const UserList = () => {
           <div
             key={user.id}
             className="flex items-center justify-between
-            bg-zinc-800 p-3.5 rounded border border-zinc-700/50
-            hover:border-indigo-500/50 transition-colors"
+            bg-zinc-800 p-3.5 rounded-lg border border-zinc-700/50
+            hover:border-zinc-500 transition-colors"
           >
             <div className="flex items-center gap-3">
               <div className="text-3xl">{user.avatar}</div>
@@ -109,9 +112,9 @@ const UserList = () => {
             </div>
             {/* 상태 표시 */}
             <div
-              className={`text-sm font-bold px-3 py-1 rounded-lg ${user.isReady ? "bg-emerald-950 text-emerald-300" : "bg-zinc-700 text-zinc-400"}`}
+              className={`text-sm px-3 py-1 rounded-lg ${user.isReady ? "bg-emerald-950 text-emerald-300" : "bg-zinc-700 text-zinc-400"}`}
             >
-              {user.isReady ? "READY" : "WAITING"}
+              {user.isReady ? "준비" : "대기"}
             </div>
           </div>
         ))}
@@ -123,21 +126,56 @@ const UserList = () => {
 const ChatSection = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  const [dummyMessages, setDummyMessages] = useState([
+    {
+      id: 1,
+      user: "김개발",
+      text: "ㅎㅇ",
+      time: "10:30 PM",
+    },
+    { id: 2, user: "박리액트", text: "ㅎㅇㅎㅇ", time: "10:31 PM" },
+    {
+      id: 3,
+      user: "시스템",
+      text: "이테일 님이 입장하셨습니다.",
+      time: "10:32 PM",
+    },
+  ]);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [dummyMessages]);
 
-  const [messages, setMessages] = useState("");
+  const [message, setMessage] = useState("");
+
+  const submitMessage = () => {
+    if (message.trim() === "") return;
+
+    setDummyMessages((prev) => [
+      ...prev,
+      {
+        id: dummyMessages.length + 1,
+        user: "나",
+        text: message,
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      },
+    ]);
+
+    setMessage("");
+  };
 
   return (
-    <div className="flex-[2] min-w-[400px] bg-zinc-900 rounded border border-zinc-800 flex flex-col shadow-xl">
+    <div className="flex-[2] min-w-[400px] bg-zinc-900 rounded-lg border border-zinc-800 flex flex-col shadow-xl">
       {/* 채팅 헤더 */}
       <div className="h-15 flex items-center p-4 border-b border-zinc-800">
         <h2 className="text-lg font-semibold text-zinc-300">채팅</h2>
       </div>
 
       {/* 채팅 내용 */}
-      <div className="flex-1 p-5 space-y-4 overflow-y-auto custom-scrollbar text-sm">
+      <div className="flex-1 p-5 space-y-4 overflow-y-auto no-scrollbar text-sm min-h-0">
         {dummyMessages.map((msg) => (
           <div
             key={msg.id}
@@ -175,6 +213,7 @@ const ChatSection = () => {
             </div>
           </div>
         ))}
+        <div ref={chatEndRef} />
       </div>
 
       {/* 채팅 입력창 */}
@@ -185,20 +224,25 @@ const ChatSection = () => {
           className="flex-1 bg-zinc-800
           border border-zinc-700 rounded-lg
           px-4 py-2.5 text-zinc-100
-          placeholder:text-zinc-600 focus:outline-none
+          hover:border-zinc-500
+          placeholder:text-zinc-600 outline-none
           transition"
-          value={messages}
-          onChange={(e) => setMessages(e.target.value)}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submitMessage();
+          }}
         />
         <button
           className={`
         text-white px-5 py-2.5 rounded-lg font-semibold
         transition active:scale-95
         ${
-          messages
+          message
             ? "bg-indigo-600 hover:bg-indigo-500"
             : "bg-zinc-600 cursor-not-allowed"
         }`}
+          onClick={submitMessage}
         >
           <Send />
         </button>
@@ -226,8 +270,11 @@ const Section = () => {
       >
         <div className="flex gap-3">
           <button
-            className="w-48 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl
-            text-lg font-bold text-white shadow-lg shadow-indigo-500/30 transition active:scale-95 animate-pulse-slow"
+            className="w-48 h-12 bg-indigo-600 hover:bg-indigo-500 rounded-xl
+            text-lg font-bold text-white shadow-lg
+            shadow-indigo-500/30 transition active:scale-95
+            outline-none
+            animate-pulse-slow"
           >
             게임 시작
           </button>
