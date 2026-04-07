@@ -1,7 +1,7 @@
 "use client";
 
 import { showTopicModalState } from "@/app/atom/modalAtom";
-import { pickedTopicAtom, topicListState } from "@/app/atom/topicAtom";
+import { pickedTopicAtom, Topic, topicListState } from "@/app/atom/topicAtom";
 import {
   Dialog,
   DialogContent,
@@ -9,21 +9,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAtom } from "jotai";
-import {
-  BoxSelect,
-  Check,
-  Filter,
-  FormInput,
-  Image,
-  Music,
-  Search,
-  Text,
-} from "lucide-react";
-import { useState } from "react";
+import { Filter, Image, Music, Text } from "lucide-react";
+import { useEffect, useState } from "react";
+import { db } from "@/app/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 export default function TopicModal() {
   const [showTopicModal, setShowTopicModal] = useAtom(showTopicModalState);
-  const [topicList] = useAtom(topicListState);
+  const [topicList, setTopicList] = useAtom(topicListState);
   const [picked, setPicked] = useAtom(pickedTopicAtom);
 
   const [category, setCategory] = useState("all");
@@ -34,6 +27,29 @@ export default function TopicModal() {
   const [showFilter, setShowFilter] = useState(false);
 
   const [topicName, setTopicName] = useState("");
+
+  useEffect(() => {
+    const fetchTopicList = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "topics"));
+        const topics: Topic[] = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          type: doc.data().type as string,
+          questionType: doc.data().questionType as "select" | "input",
+          topicName: doc.data().topicName as string,
+          description: doc.data().description as string,
+          category: doc.data().category as string,
+        }));
+        
+        setTopicList(topics);
+      } catch (error) {
+        console.error("Error fetching topic list:", error);
+      }
+    };
+
+    fetchTopicList();
+  }, []);
+
 
   const handleTopicNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTopicName(e.target.value);

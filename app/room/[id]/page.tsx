@@ -7,7 +7,7 @@ import {
   Settings,
   SquareArrowRightExit,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAtom } from "jotai";
 import { useEffect, useState, useRef } from "react";
 import { setRoomModalState } from "@/app/atom/modalAtom";
@@ -24,6 +24,7 @@ const dummyUsers = [
 
 const Header = () => {
   const router = useRouter();
+  const pathName = usePathname();
 
   return (
     // 네온 효과와 약간의 투명도를 준 상단 바
@@ -35,7 +36,7 @@ const Header = () => {
     >
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-bold text-zinc-50 tracking-tight">
-          <span className="text-indigo-400">#AUGCFF</span> 아무나 들어오세요
+          <span className="text-indigo-400">{pathName.split("/").pop()}</span> 아무나 들어오세요
         </h1>
       </div>
 

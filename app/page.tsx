@@ -1,9 +1,14 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { roomListState } from "@/app/atom/lobbyAtom";
+import { Room, roomListState } from "@/app/atom/lobbyAtom";
 import RoomCodeModal from "./components/main/modals/room_code/RoomCodeModal";
 import { alertModalState, setRoomModalState } from "./atom/modalAtom";
+import { useRouter } from "next/navigation";
+import { db } from "./lib/firebase";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { get } from "http";
 
 export const Header = () => {
   return (
@@ -26,8 +31,10 @@ export const Header = () => {
 
 export const Section = () => {
   const [, setRoomDescription] = useAtom(setRoomModalState);
-  const [roomList] = useAtom(roomListState);
+  const [roomList, setRoomList] = useAtom(roomListState);
   const [, setShowAlertModal] = useAtom(alertModalState);
+
+  const router = useRouter();
 
   const enterRoom = (
     id: string,
@@ -44,7 +51,71 @@ export const Section = () => {
       setShowAlertModal("인원이 꽉 찼습니다!");
       return;
     }
+
+    router.push(`/room/${id}`);
   };
+
+  const [topicMap, setTopicMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const fetchTopics = async () => {
+      const querySnapshot = await getDocs(collection(db, "topics"));
+      const mapping: Record<string, string> = {};
+      querySnapshot.forEach((doc) => {
+        mapping[doc.id] = doc.data().topicName;
+      });
+      setTopicMap(mapping);
+    };
+    fetchTopics();
+  }, []);
+
+  useEffect(() => {
+    // 1. 컬렉션 참조 생성
+    const roomsCollection = collection(db, "rooms");
+
+    // 2. 실시간 리스너 연결 (onSnapshot)
+    // query를 써서 생성일 순(orderBy)으로 정렬하는 걸 추천하지만, 일단 기본형으로 수정해 드릴게요.
+    const unsubscribe = onSnapshot(
+      roomsCollection,
+      (querySnapshot) => {
+        const roomsData: Room[] = querySnapshot.docs.map((doc) => {
+          const rawTopic = doc.data().topic || "";
+          const topicParts = rawTopic.split(", ");
+          const firstTopicName = topicMap[topicParts[0]] || topicParts[0];
+
+          const topicName =
+            topicParts.length > 1
+              ? `${firstTopicName} 외 ${topicParts.length - 1}개`
+              : firstTopicName;
+
+          return {
+            id: doc.id,
+            roomName: doc.data().roomName,
+            topic: topicName,
+            capacity: doc.data().capacity,
+            maxCapacity: doc.data().maxCapacity,
+            playing: doc.data().playing,
+          };
+        });
+
+        // 데이터가 비었을 때 처리
+        if (roomsData.length === 0) {
+          setRoomList([]);
+          console.log("No rooms found.");
+        } else {
+          setRoomList(roomsData);
+        }
+
+        console.log("Real-time rooms update:", roomsData);
+      },
+      (error) => {
+        // 에러 처리 (권한 문제 등)
+        console.error("Error fetching rooms in real-time:", error);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [topicMap]);
 
   return (
     <div
@@ -77,13 +148,18 @@ export const Section = () => {
             <div
               role="button"
               onClick={() =>
-                enterRoom(room.id, room.capacity, room.maxCapacity, room.played)
+                enterRoom(
+                  room.id,
+                  room.capacity,
+                  room.maxCapacity,
+                  room.playing,
+                )
               }
               className={`relative h-[150px]
                       flex flex-col
                       p-5
                       rounded-lg
-                      ${room.played ? "bg-zinc-950" : "bg-zinc-900 hover:bg-zinc-800"}`}
+                      ${room.playing ? "bg-zinc-950" : "bg-zinc-900 hover:bg-zinc-800"}`}
               key={room.id}
             >
               <h2 className="w-full text-xl font-bold">{room.roomName}</h2>

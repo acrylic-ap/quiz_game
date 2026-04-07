@@ -2,42 +2,34 @@
 
 import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAtom } from "jotai";
+import { internalValueAtom } from "@/app/atom/roomAtom";
 
-interface StepSliderProps {
-  min?: number;
-  max?: number;
-  step?: number;
-  defaultValue?: number;
-  value?: number;
-  onValueChange?: (value: number) => void;
-  showLabels?: boolean;
-  className?: string;
-  maxLabel?: string;
-}
+/*
+min: 10,
+  max: 60,
+  step: 10,
+  defaultValue: 10,
+  value: undefined,
+  onValueChange: undefined,
+  showLabels: true,
+  className: undefined,
+  maxLabel: "전체",
+*/
 
-export function StepSlider({
-  min = 10,
-  max = 60,
-  step = 10,
-  defaultValue,
-  value: controlledValue,
-  onValueChange,
-  showLabels = true,
-  className,
-  maxLabel = "전체",
-}: StepSliderProps) {
-  const [internalValue, setInternalValue] = useState(defaultValue ?? min);
-  const value = controlledValue ?? internalValue;
+export function StepSlider() {
+  const [internalValue, setInternalValue] = useAtom(internalValueAtom);
+  const value = internalValue;
 
   const trackRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
   const steps = Array.from(
-    { length: Math.floor((max - min) / step) + 1 },
-    (_, i) => min + i * step,
+    { length: Math.floor((60 - 10) / 10) + 1 },
+    (_, i) => 10 + i * 10,
   );
 
-  const getPct = (v: number) => ((v - min) / (max - min)) * 100;
+  const getPct = (v: number) => ((v - 10) / (60 - 10)) * 100;
 
   const valueFromClientX = useCallback(
     (clientX: number) => {
@@ -47,19 +39,15 @@ export function StepSlider({
         0,
         Math.min(1, (clientX - rect.left) / rect.width),
       );
-      const raw = min + ratio * (max - min);
-      return Math.round(raw / step) * step;
+      const raw = 10 + ratio * (60 - 10);
+      return Math.round(raw / 10) * 10;
     },
-    [min, max, step, value],
+    [value],
   );
 
-  const setValue = useCallback(
-    (v: number) => {
-      setInternalValue(v);
-      onValueChange?.(v);
-    },
-    [onValueChange],
-  );
+  const setValue = useCallback((v: number) => {
+    setInternalValue(v);
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     dragging.current = true;
@@ -96,7 +84,7 @@ export function StepSlider({
   };
 
   return (
-    <div className={cn("relative w-[60%] pt-5 pb-7.5", className)}>
+    <div className={cn("relative w-[60%] pt-5 pb-7.5")}>
       {/* 트랙 영역: 클릭/드래그 이벤트 수신 */}
       <div
         ref={trackRef}
@@ -122,27 +110,26 @@ export function StepSlider({
           style={{ left: `${getPct(value)}%` }}
         />
       </div>
-      {showLabels && (
-        <div className="absolute inset-x-0 bottom-0 h-5">
-          {steps.map((v) => (
-            <span
-              key={v}
-              className={cn(
-                "absolute text-[11px] select-none tabular-nums transition-colors whitespace-nowrap",
-                v === value ? "white" : "text-zinc-700",
-              )}
-              style={{
-                left: `${getPct(v)}%`,
-                transform: "translateX(-50%)", // 모든 숫자를 해당 눈금의 정중앙에 배치
-                textAlign: "center",
-                minWidth: "40px", // 터치/클릭 영역 및 정렬 안정성 확보
-              }}
-            >
-              {v === max ? maxLabel : v}
-            </span>
-          ))}
-        </div>
-      )}
+
+      <div className="absolute inset-x-0 bottom-0 h-5">
+        {steps.map((v) => (
+          <span
+            key={v}
+            className={cn(
+              "absolute text-[11px] select-none tabular-nums transition-colors whitespace-nowrap",
+              v === value ? "white" : "text-zinc-700",
+            )}
+            style={{
+              left: `${getPct(v)}%`,
+              transform: "translateX(-50%)", // 모든 숫자를 해당 눈금의 정중앙에 배치
+              textAlign: "center",
+              minWidth: "40px", // 터치/클릭 영역 및 정렬 안정성 확보
+            }}
+          >
+            {v === 60 ? "전체" : v}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
