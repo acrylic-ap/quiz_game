@@ -1,3 +1,4 @@
 import { atom } from "jotai";
+import { Room } from "./lobbyAtom";
 
-export const internalValueAtom = atom(10);
+export const roomDataState = atom<Room | undefined>();

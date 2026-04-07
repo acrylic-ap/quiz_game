@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import { db } from "./lib/firebase";
 import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { get } from "http";
 
 export const Header = () => {
   return (

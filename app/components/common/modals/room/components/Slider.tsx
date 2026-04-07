@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAtom } from "jotai";
-import { internalValueAtom } from "@/app/atom/roomAtom";
+import { internalValueAtom } from "@/app/atom/roomModalAtom";
 
 /*
 min: 10,

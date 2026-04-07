@@ -7,10 +7,14 @@ import {
   Settings,
   SquareArrowRightExit,
 } from "lucide-react";
+import { Room } from "@/app/atom/lobbyAtom";
 import { usePathname, useRouter } from "next/navigation";
 import { useAtom } from "jotai";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 import { setRoomModalState } from "@/app/atom/modalAtom";
+import { db } from "@/app/lib/firebase";
+import { doc, getDocs, onSnapshot, collection } from "firebase/firestore";
+import { roomDataState } from "@/app/atom/roomAtom";
 
 // --- 임시 데이터 (나중에 DB나 소켓에서 가져올 데이터) ---
 const dummyUsers = [
@@ -24,7 +28,65 @@ const dummyUsers = [
 
 const Header = () => {
   const router = useRouter();
-  const pathName = usePathname();
+  const roomId = usePathname().split("/").pop();
+
+  const [roomData, setRoomData] = useAtom(roomDataState);
+  const [topicMap, setTopicMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const fetchTopics = async () => {
+      const querySnapshot = await getDocs(collection(db, "topics"));
+      const mapping: Record<string, string> = {};
+      querySnapshot.forEach((doc) => {
+        mapping[doc.id] = doc.data().topicName;
+      });
+      setTopicMap(mapping);
+    };
+    fetchTopics();
+  }, []);
+
+  useEffect(() => {
+    if (!roomId) return;
+    const roomDocRef = doc(db, `rooms/${roomId}`);
+
+    const unsubscribe = onSnapshot(
+      roomDocRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const rawTopic = data.topic || "";
+          const topicParts = rawTopic.split(", ");
+          const firstTopicName = topicMap[topicParts[0]] || topicParts[0];
+
+          const topicName =
+            topicParts.length > 1
+              ? `${firstTopicName} 외 ${topicParts.length - 1}개`
+              : firstTopicName;
+
+          const roomData: Room = {
+            id: docSnap.id,
+            roomName: data.roomName,
+            topic: topicName,
+            capacity: data.capacity,
+            maxCapacity: data.maxCapacity,
+            playing: data.playing,
+          };
+
+          if(roomData) {
+            setRoomData(roomData);
+          }
+
+          console.log("Real-time room update:", roomData);
+        }
+      },
+      (error) => {
+        // 에러 처리 (권한 문제 등)
+        console.error("Error fetching rooms in real-time:", error);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [topicMap]);
 
   return (
     // 네온 효과와 약간의 투명도를 준 상단 바
@@ -36,7 +98,7 @@ const Header = () => {
     >
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-bold text-zinc-50 tracking-tight">
-          <span className="text-indigo-400">{pathName.split("/").pop()}</span> 아무나 들어오세요
+          <span className="text-indigo-400">{roomId}</span> {roomData?.roomName}
         </h1>
       </div>
 
@@ -60,6 +122,7 @@ const Header = () => {
 
 export const RoomInfo = () => {
   const [, setRoomDescription] = useAtom(setRoomModalState);
+  const [roomData] = useAtom(roomDataState);
 
   return (
     <div
@@ -70,7 +133,7 @@ export const RoomInfo = () => {
       <div className="text-zinc-400 flex items-center gap-3">
         {true ? <Eye size={20} /> : <EyeClosed size={20} />}
         <span className="text-xl font-bold text-zinc-100">주제</span>
-        <label className="text-lg">맞춤법 퀴즈 외 3개</label>
+        <label className="text-lg">{roomData?.topic}</label>
       </div>
 
       <div className="h-fit flex">
@@ -285,7 +348,7 @@ const Section = () => {
   );
 };
 
-export default function Room() {
+export default function RoomPage() {
   return (
     // 전체 화면 꽉 차게 설정 (h-screen)
     <div className="relative w-full h-screen overflow-hidden bg-zinc-950 font-sans tracking-tight">

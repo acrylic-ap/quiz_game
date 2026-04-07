@@ -17,7 +17,7 @@ import {
   showTopicModalState,
 } from "@/app/atom/modalAtom";
 import { pickedTopicAtom } from "@/app/atom/topicAtom";
-import { internalValueAtom } from "@/app/atom/roomAtom";
+import { internalValueAtom } from "@/app/atom/roomModalAtom";
 import { db } from "@/app/lib/firebase";
 import { collection, addDoc, getDoc, doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
