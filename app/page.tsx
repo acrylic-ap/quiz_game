@@ -80,7 +80,7 @@ export const Section = () => {
         const roomsData: Room[] = querySnapshot.docs.map((doc) => {
           const rawTopic = doc.data().topic || "";
           const topicParts = rawTopic.split(", ");
-          const firstTopicName = topicMap[topicParts[0]] || topicParts[0];
+          const firstTopicName = topicMap[topicParts[0]] || "";
 
           const topicName =
             topicParts.length > 1
@@ -94,6 +94,7 @@ export const Section = () => {
             capacity: doc.data().capacity,
             maxCapacity: doc.data().maxCapacity,
             playing: doc.data().playing,
+            decision: doc.data().decision,
           };
         });
 

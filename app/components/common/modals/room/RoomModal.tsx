@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { CircleQuestionMark, User } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StepSlider } from "./components/Slider";
 import { useAtom } from "jotai";
 import {
@@ -19,9 +19,12 @@ import {
 import { pickedTopicAtom } from "@/app/atom/topicAtom";
 import { internalValueAtom } from "@/app/atom/roomModalAtom";
 import { db } from "@/app/lib/firebase";
-import { collection, addDoc, getDoc, doc, setDoc } from "firebase/firestore";
+import { getDoc, doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { generateRoomId } from "@/app/lib/utils";
+import { roomDataState } from "@/app/atom/roomAtom";
+import { DECISION_LIST, DecisionType } from "@/app/atom/lobbyAtom";
+import { getDisplayTopic } from "../../utils/topic";
 
 export default function RoomModal() {
   const router = useRouter();
@@ -31,14 +34,6 @@ export default function RoomModal() {
   const [, setShowTopicModal] = useAtom(showTopicModalState);
 
   // decision
-  const DECISION_LIST = {
-    random: { label: "랜덤", next: "vote" },
-    vote: { label: "투표", next: "always_random" },
-    always_random: { label: "항시 랜덤", next: "random" },
-  };
-
-  type DecisionType = keyof typeof DECISION_LIST;
-
   const [decision, setDecision] = useState<DecisionType>("random");
 
   // info tooltip
@@ -49,13 +44,34 @@ export default function RoomModal() {
   const [selectedCapacity, setSelectedCapacity] = useState(2);
   const [rank, setRank] = useState<"count" | "time">("count");
   const [showPublic, setShowPublic] = useState(true);
-  const [pickedTopic] = useAtom(pickedTopicAtom);
-  const [internalValue] = useAtom(internalValueAtom);
+  const [pickedTopic, setPickedTopic] = useAtom(pickedTopicAtom);
+  const [internalValue, setInternalValue] = useAtom(internalValueAtom);
 
   const [roomName, setRoomName] = useState("");
   const handleRoomNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRoomName(e.target.value);
   };
+
+  const [room] = useAtom(roomDataState);
+
+  useEffect(() => {
+    if (roomDescription === "edit") {
+      if (room?.decision) setDecision(room?.decision);
+      if (room?.internalValue) setInternalValue(room?.internalValue);
+      if (room?.showPublic) setShowPublic(room?.showPublic);
+      if (room?.rank) setRank(room?.rank);
+
+      if (room?.maxCapacity) setSelectedCapacity(room?.maxCapacity);
+      if (room?.roomName) setRoomName(room?.roomName);
+      if (room?.topicItem) {
+        const newMap = new Map<string, string>(room?.topicItem);
+
+        console.log(newMap);
+
+        setPickedTopic(newMap);
+      }
+    }
+  }, [roomDescription]);
 
   const isRoomValid = () => {
     if (!roomName.length) {

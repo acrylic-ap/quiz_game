@@ -7,14 +7,23 @@ import {
   Settings,
   SquareArrowRightExit,
 } from "lucide-react";
-import { Room } from "@/app/atom/lobbyAtom";
+import { Chat, Room } from "@/app/atom/lobbyAtom";
 import { usePathname, useRouter } from "next/navigation";
 import { useAtom } from "jotai";
-import { useEffect, useState, useRef, use } from "react";
+import { useEffect, useState, useRef } from "react";
 import { setRoomModalState } from "@/app/atom/modalAtom";
 import { db } from "@/app/lib/firebase";
-import { doc, getDocs, onSnapshot, collection } from "firebase/firestore";
+import {
+  doc,
+  getDocs,
+  onSnapshot,
+  collection,
+  addDoc,
+  query,
+  orderBy,
+} from "firebase/firestore";
 import { roomDataState } from "@/app/atom/roomAtom";
+import { getDisplayTopic } from "@/app/components/common/utils/topic";
 
 // --- 임시 데이터 (나중에 DB나 소켓에서 가져올 데이터) ---
 const dummyUsers = [
@@ -31,17 +40,26 @@ const Header = () => {
   const roomId = usePathname().split("/").pop();
 
   const [roomData, setRoomData] = useAtom(roomDataState);
-  const [topicMap, setTopicMap] = useState<Record<string, string>>({});
+  const [topicMap, setTopicMap] = useState<Map<string, string>>(
+    new Map<string, string>(),
+  );
 
   useEffect(() => {
     const fetchTopics = async () => {
       const querySnapshot = await getDocs(collection(db, "topics"));
-      const mapping: Record<string, string> = {};
+
+      const mapping = new Map<string, string>();
+
       querySnapshot.forEach((doc) => {
-        mapping[doc.id] = doc.data().topicName;
+        const data = doc.data();
+        if (data.topicName) {
+          mapping.set(doc.id, data.topicName);
+        }
       });
+
       setTopicMap(mapping);
     };
+
     fetchTopics();
   }, []);
 
@@ -54,29 +72,35 @@ const Header = () => {
       (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
-          const rawTopic = data.topic || "";
-          const topicParts = rawTopic.split(", ");
-          const firstTopicName = topicMap[topicParts[0]] || topicParts[0];
+          const topics = data.topic.split(", ");
+          const roomTopicMap: Map<string, string> = new Map<string, string>();
 
-          const topicName =
-            topicParts.length > 1
-              ? `${firstTopicName} 외 ${topicParts.length - 1}개`
-              : firstTopicName;
+          topics.map((id: string) => {
+            const topicName = topicMap.get(id);
+
+            console.log(topicMap);
+
+            if (topicName) roomTopicMap.set(id, topicName);
+          });
+
+          console.log(roomTopicMap);
 
           const roomData: Room = {
             id: docSnap.id,
             roomName: data.roomName,
-            topic: topicName,
+            topicItem: roomTopicMap,
             capacity: data.capacity,
             maxCapacity: data.maxCapacity,
             playing: data.playing,
+            decision: data.decision,
+            internalValue: data.internalValue,
+            showPublic: data.showPublic,
+            rank: data.rank,
           };
 
-          if(roomData) {
+          if (roomData) {
             setRoomData(roomData);
           }
-
-          console.log("Real-time room update:", roomData);
         }
       },
       (error) => {
@@ -133,7 +157,9 @@ export const RoomInfo = () => {
       <div className="text-zinc-400 flex items-center gap-3">
         {true ? <Eye size={20} /> : <EyeClosed size={20} />}
         <span className="text-xl font-bold text-zinc-100">주제</span>
-        <label className="text-lg">{roomData?.topic}</label>
+        <label className="text-lg">
+          {roomData?.topicItem && getDisplayTopic(roomData?.topicItem)}
+        </label>
       </div>
 
       <div className="h-fit flex">
@@ -149,12 +175,17 @@ export const RoomInfo = () => {
 };
 
 const UserList = () => {
+  const [room] = useAtom(roomDataState);
+
   return (
     <div className="flex-1 min-w-[300px] bg-zinc-900 rounded-lg border border-zinc-800 p-4 flex flex-col gap-4 shadow-xl">
       <h2 className="text-lg font-semibold text-zinc-300 flex items-center gap-2">
-        유저
+        참여자
+        <span className="text-zinc-400">
+          {room?.capacity}/{room?.maxCapacity}
+        </span>
       </h2>
-      <div className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+      <div className="flex-1 space-y-3 overflow-y-auto pr-2 no-scrollbar">
         {dummyUsers.map((user) => (
           <div
             key={user.id}
@@ -175,11 +206,13 @@ const UserList = () => {
               </div>
             </div>
             {/* 상태 표시 */}
-            <div
-              className={`text-sm px-3 py-1 rounded-lg ${user.isReady ? "bg-emerald-950 text-emerald-300" : "bg-zinc-700 text-zinc-400"}`}
-            >
-              {user.isReady ? "준비" : "대기"}
-            </div>
+            {!user.isAdmin && (
+              <div
+                className={`text-sm px-3 py-1 rounded-lg ${user.isReady ? "bg-emerald-950 text-emerald-300" : "bg-zinc-700 text-zinc-400"}`}
+              >
+                {user.isReady ? "준비" : "대기"}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -189,46 +222,75 @@ const UserList = () => {
 
 const ChatSection = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const roomId = usePathname().split("/").pop();
 
-  const [dummyMessages, setDummyMessages] = useState([
-    {
-      id: 1,
-      user: "김개발",
-      text: "ㅎㅇ",
-      time: "10:30 PM",
-    },
-    { id: 2, user: "박리액트", text: "ㅎㅇㅎㅇ", time: "10:31 PM" },
-    {
-      id: 3,
-      user: "시스템",
-      text: "이테일 님이 입장하셨습니다.",
-      time: "10:32 PM",
-    },
-  ]);
+  const [messages, setMessages] = useState<Chat[]>([]);
+
+  useEffect(() => {
+    const roomsCollection = collection(db, `rooms/${roomId}/chats`);
+    const q = query(roomsCollection, orderBy("time", "asc"));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const messageData: Chat[] = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          const timeString = data.time?.toDate().toLocaleTimeString("ko-KR");
+
+          return {
+            id: doc.id,
+            username: data.username,
+            text: data.text,
+            time: timeString || "방금 전",
+            isAdmin: data.isAdmin,
+          };
+        });
+
+        // 데이터가 비었을 때 처리
+        if (messageData.length === 0) {
+          console.log("No messages found.");
+        } else {
+          setMessages(messageData);
+        }
+      },
+      (error) => {
+        // 에러 처리 (권한 문제 등)
+        console.error("Error fetching rooms in real-time:", error);
+      },
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [dummyMessages]);
+  }, [messages]);
 
   const [message, setMessage] = useState("");
 
-  const submitMessage = () => {
+  const submitMessage = async () => {
     if (message.trim() === "") return;
 
-    setDummyMessages((prev) => [
-      ...prev,
-      {
-        id: dummyMessages.length + 1,
-        user: "나",
-        text: message,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-    ]);
+    try {
+      const docRef = collection(db, `rooms/${roomId}/chats`);
 
-    setMessage("");
+      await addDoc(docRef, {
+        username: "Acrylic",
+        text: message,
+        time: new Date(),
+        isAdmin: true,
+      });
+    } catch (error: any) {
+      console.error("방 생성 중 에러 발생:", error);
+
+      if (error.code === "permission-denied") {
+        alert("방을 만들 권한이 없습니다. 로그인을 확인해주세요.");
+      } else {
+        alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      }
+    } finally {
+      setMessage("");
+    }
   };
 
   return (
@@ -240,34 +302,34 @@ const ChatSection = () => {
 
       {/* 채팅 내용 */}
       <div className="flex-1 p-5 space-y-4 overflow-y-auto no-scrollbar text-sm min-h-0">
-        {dummyMessages.map((msg) => (
+        {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex gap-3 ${msg.user === "시스템" ? "justify-center" : ""}`}
+            className={`flex gap-3 ${msg.username === "시스템" ? "justify-center" : ""}`}
           >
-            {msg.user !== "시스템" && (
+            {msg.username !== "시스템" && (
               <div
                 className="w-8 h-8 rounded-full
               bg-zinc-700 flex items-center justify-center
               font-bold text-zinc-300 mt-0.5"
               >
-                {msg.user[0]}
+                {msg.username[0]}
               </div>
             )}
             <div
-              className={`flex flex-col ${msg.user === "시스템" ? "items-center" : ""}`}
+              className={`flex flex-col ${msg.username === "시스템" ? "items-center" : ""}`}
             >
-              {msg.user !== "시스템" && (
+              {msg.username !== "시스템" && (
                 <div className="flex items-baseline gap-2 mb-1">
                   <span className="font-semibold text-zinc-200">
-                    {msg.user}
+                    {msg.username}
                   </span>
                   <span className="text-xs text-zinc-600">{msg.time}</span>
                 </div>
               )}
               <div
                 className={`px-4 py-2 rounded-xl w-fit ${
-                  msg.user === "시스템"
+                  msg.username === "시스템"
                     ? "bg-zinc-800 text-zinc-500 text-xs"
                     : "bg-zinc-800 text-zinc-100 rounded-tl-none"
                 }`}
