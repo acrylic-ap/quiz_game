@@ -12,19 +12,21 @@ import { db } from "@/app/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useAtom } from "jotai";
 import { alertModalState } from "@/app/atom/modalAtom";
-import { Room } from "@/app/atom/lobbyAtom";
+import { KeyRoom, Room, userIdState } from "@/app/atom/lobbyAtom";
 import { useRouter } from "next/navigation";
 
 export default function RoomCodeModal() {
   const router = useRouter();
   const [, setAlertModal] = useAtom(alertModalState);
   const [roomCode, setRoomCode] = useState("");
+  const [userId] = useAtom(userIdState)
 
   const handleRoomCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRoomCode(e.target.value);
   };
 
   const enterCodeRoom = () => {
+    if (!userId) return setAlertModal("로그인 후 이용해주세요!");
     if (!roomCode) return setAlertModal("코드를 입력해주세요!");
 
     // 1. 컬렉션 참조 생성
@@ -32,13 +34,11 @@ export default function RoomCodeModal() {
 
     // 2. 데이터 가져오기
     getDocs(roomsCollection).then((querySnapshot) => {
-      const roomsData: Room[] = querySnapshot.docs.map((doc) => ({
+      const roomsData: KeyRoom[] = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        roomName: doc.data().roomName,
-        topic: doc.data().topic,
+        playing: doc.data().playing,
         capacity: doc.data().capacity,
         maxCapacity: doc.data().maxCapacity,
-        playing: doc.data().playing,
       }));
       const room = roomsData.find((room) => room.id === roomCode);
 

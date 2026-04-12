@@ -1,15 +1,80 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { Room, roomListState } from "@/app/atom/lobbyAtom";
+import {
+  LobbyRoom,
+  nicknameLoadedState,
+  nicknameState,
+  roomListState,
+  userIdState,
+} from "@/app/atom/lobbyAtom";
 import RoomCodeModal from "./components/main/modals/room_code/RoomCodeModal";
-import { alertModalState, setRoomModalState } from "./atom/modalAtom";
+import {
+  alertModalState,
+  loginModalState,
+  setRoomModalState,
+} from "./atom/modalAtom";
 import { useRouter } from "next/navigation";
-import { db } from "./lib/firebase";
-import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import { db, rtdb } from "./lib/firebase";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
+import { getAuth } from "firebase/auth";
+import { get, ref } from "firebase/database";
 
 export const Header = () => {
+  const [, setShowLoginModal] = useAtom(loginModalState);
+  const [userId, setUserId] = useAtom(userIdState);
+  const [nickname, setNickname] = useAtom(nicknameState);
+
+  const [, setNicknameLoaded] = useAtom(nicknameLoadedState);
+
+  const initAuthUser = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      setUserId("");
+      setNickname("");
+      setNicknameLoaded(true);
+      return;
+    }
+
+    setUserId(user.uid);
+
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        setNickname(data.nickname);
+      } else {
+        const name = user.displayName || "닉네임 없음";
+        setNickname(name);
+      }
+    } catch (error) {
+      console.error("사용자 정보를 불러오는 중 오류 발생:", error);
+    } finally {
+      setNicknameLoaded(true);
+    }
+  };
+
+  useEffect(() => {
+    const auth = getAuth();
+
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      initAuthUser();
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   return (
     <div
       className="relative w-full h-[20%]
@@ -21,7 +86,9 @@ export const Header = () => {
         </h1>
 
         <div className="absolute right-0 top-[35px]">
-          <button>로그인</button>
+          <button onClick={() => (!userId ? setShowLoginModal(true) : false)}>
+            {nickname ? nickname : "로그인"}
+          </button>
         </div>
       </div>
     </div>
@@ -32,6 +99,7 @@ export const Section = () => {
   const [, setRoomDescription] = useAtom(setRoomModalState);
   const [roomList, setRoomList] = useAtom(roomListState);
   const [, setShowAlertModal] = useAtom(alertModalState);
+  const [userId] = useAtom(userIdState);
 
   const router = useRouter();
 
@@ -41,6 +109,11 @@ export const Section = () => {
     maxCapacity: number,
     played: boolean,
   ) => {
+    if (!userId) {
+      setShowAlertModal("로그인 후 이용해주세요!");
+      return;
+    }
+
     if (played) {
       setShowAlertModal("이미 진행 중인 방입니다!");
       return;
@@ -77,7 +150,7 @@ export const Section = () => {
     const unsubscribe = onSnapshot(
       roomsCollection,
       (querySnapshot) => {
-        const roomsData: Room[] = querySnapshot.docs.map((doc) => {
+        const roomsData: LobbyRoom[] = querySnapshot.docs.map((doc) => {
           const rawTopic = doc.data().topic || "";
           const topicParts = rawTopic.split(", ");
           const firstTopicName = topicMap[topicParts[0]] || "";
@@ -90,7 +163,7 @@ export const Section = () => {
           return {
             id: doc.id,
             roomName: doc.data().roomName,
-            topic: topicName,
+            topicName,
             capacity: doc.data().capacity,
             maxCapacity: doc.data().maxCapacity,
             playing: doc.data().playing,
@@ -130,7 +203,11 @@ export const Section = () => {
           className="px-8 py-3 mr-2 rounded-sm
                   text-xl select-none bg-zinc-900
                   hover:bg-zinc-800"
-          onClick={() => setRoomDescription("create")}
+          onClick={() =>
+            !userId
+              ? setShowAlertModal("로그인 후 이용해주세요!")
+              : setRoomDescription("create")
+          }
         >
           방 생성
         </button>
@@ -163,7 +240,7 @@ export const Section = () => {
               key={room.id}
             >
               <h2 className="w-full text-xl font-bold">{room.roomName}</h2>
-              <p className="w-full text text-zinc-300">{room.topic}</p>
+              <p className="w-full text text-zinc-300">{room.topicName}</p>
               <div
                 className="absolute left-2 bottom-2
                         text mb-1 px-3 py-1
@@ -195,12 +272,24 @@ export const Section = () => {
 };
 
 export default function Home() {
+  const [nicknameLoaded, setNicknameLoaded] = useAtom(nicknameLoadedState);
+
   return (
     <div
       className="w-full h-full
                 flex flex-col
                 font-[Pretendard]"
     >
+      {!nicknameLoaded && (
+        <div
+          className="absolute top-0 left-0 w-full h-full
+                bg-zinc-900/50
+                flex justify-center items-center
+                z-100 text-2xl"
+        >
+          로딩 중...
+        </div>
+      )}
       <Header />
       <Section />
     </div>

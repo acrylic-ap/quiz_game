@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import TopicModal from "./components/common/modals/topic/TopicModal";
 import AlertModal from "./components/common/modals/alert/AlertModal";
 import RoomModal from "./components/common/modals/room/RoomModal";
+import LoginModal from "./components/common/modals/login/LoginModal";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -37,6 +38,7 @@ export default function RootLayout({
           <TopicModal />
           <AlertModal />
           <RoomModal />
+          <LoginModal />
           {children}
         </Provider>
       </body>

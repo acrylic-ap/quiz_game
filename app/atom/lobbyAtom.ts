@@ -29,9 +29,25 @@ export interface Room {
   rank: "count" | "time";
 }
 
-// setDecision(room?.decision);
-// setInternalValue(room?.internalValue);
-// setShowPublic(room?.showPublic);
-// setRank(room?.rank);
+export interface LobbyRoom {
+  id: string;
+  roomName: string;
+  topicName: string;
+  capacity: number;
+  maxCapacity: number;
+  playing: boolean;
+  decision: DecisionType;
+}
 
-export const roomListState = atom<Room[]>([]);
+export interface KeyRoom {
+  id: string;
+  capacity: number;
+  maxCapacity: number;
+  playing: boolean;
+}
+
+export const roomListState = atom<LobbyRoom[]>([]);
+
+export const userIdState = atom<string>("");
+export const nicknameState = atom<string>("");
+export const nicknameLoadedState = atom<boolean>(false);
