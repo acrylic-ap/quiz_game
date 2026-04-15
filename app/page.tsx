@@ -1,13 +1,7 @@
 "use client";
 
 import { useAtom } from "jotai";
-import {
-  LobbyRoom,
-  nicknameLoadedState,
-  nicknameState,
-  roomListState,
-  userIdState,
-} from "@/app/atom/lobbyAtom";
+import { LobbyRoom } from "@/app/atom/lobbyAtom";
 import RoomCodeModal from "./components/main/modals/room_code/RoomCodeModal";
 import {
   alertModalState,
@@ -15,65 +9,13 @@ import {
   setRoomModalState,
 } from "./atom/modalAtom";
 import { useRouter } from "next/navigation";
-import { db, rtdb } from "./lib/firebase";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  onSnapshot,
-} from "firebase/firestore";
-import { useEffect, useState } from "react";
-import { getAuth } from "firebase/auth";
-import { get, ref } from "firebase/database";
+import { useUser } from "./hooks/queries/lobby/useAuth";
+import { useRoomList } from "./hooks/queries/lobby/useLobbyQuery";
 
 export const Header = () => {
   const [, setShowLoginModal] = useAtom(loginModalState);
-  const [userId, setUserId] = useAtom(userIdState);
-  const [nickname, setNickname] = useAtom(nicknameState);
 
-  const [, setNicknameLoaded] = useAtom(nicknameLoadedState);
-
-  const initAuthUser = async () => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-
-    if (!user) {
-      setUserId("");
-      setNickname("");
-      setNicknameLoaded(true);
-      return;
-    }
-
-    setUserId(user.uid);
-
-    try {
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const data = userSnap.data();
-        setNickname(data.nickname);
-      } else {
-        const name = user.displayName || "닉네임 없음";
-        setNickname(name);
-      }
-    } catch (error) {
-      console.error("사용자 정보를 불러오는 중 오류 발생:", error);
-    } finally {
-      setNicknameLoaded(true);
-    }
-  };
-
-  useEffect(() => {
-    const auth = getAuth();
-
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      initAuthUser();
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const { data: user, isLoading } = useUser();
 
   return (
     <div
@@ -86,9 +28,13 @@ export const Header = () => {
         </h1>
 
         <div className="absolute right-0 top-[35px]">
-          <button onClick={() => (!userId ? setShowLoginModal(true) : false)}>
-            {nickname ? nickname : "로그인"}
-          </button>
+          {isLoading ? (
+            <span>...</span>
+          ) : (
+            <button onClick={() => (!user ? setShowLoginModal(true) : false)}>
+              {user ? user.nickname : "로그인"}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -97,98 +43,21 @@ export const Header = () => {
 
 export const Section = () => {
   const [, setRoomDescription] = useAtom(setRoomModalState);
-  const [roomList, setRoomList] = useAtom(roomListState);
   const [, setShowAlertModal] = useAtom(alertModalState);
-  const [userId] = useAtom(userIdState);
+  const { data: user } = useUser();
 
   const router = useRouter();
 
-  const enterRoom = (
-    id: string,
-    capacity: number,
-    maxCapacity: number,
-    played: boolean,
-  ) => {
-    if (!userId) {
-      setShowAlertModal("로그인 후 이용해주세요!");
-      return;
-    }
+  const { data: roomList = [], isPending } = useRoomList();
 
-    if (played) {
-      setShowAlertModal("이미 진행 중인 방입니다!");
-      return;
-    }
+  const enterRoom = (room: LobbyRoom) => {
+    if (!user) return setShowAlertModal("로그인 후 이용해주세요!");
+    if (room.playing) return setShowAlertModal("이미 진행 중인 방입니다!");
+    if (room.capacity === room.maxCapacity)
+      return setShowAlertModal("인원이 꽉 찼습니다!");
 
-    if (capacity === maxCapacity) {
-      setShowAlertModal("인원이 꽉 찼습니다!");
-      return;
-    }
-
-    router.push(`/room/${id}`);
+    router.push(`/room/${room.id}`);
   };
-
-  const [topicMap, setTopicMap] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    const fetchTopics = async () => {
-      const querySnapshot = await getDocs(collection(db, "topics"));
-      const mapping: Record<string, string> = {};
-      querySnapshot.forEach((doc) => {
-        mapping[doc.id] = doc.data().topicName;
-      });
-      setTopicMap(mapping);
-    };
-    fetchTopics();
-  }, []);
-
-  useEffect(() => {
-    // 1. 컬렉션 참조 생성
-    const roomsCollection = collection(db, "rooms");
-
-    // 2. 실시간 리스너 연결 (onSnapshot)
-    // query를 써서 생성일 순(orderBy)으로 정렬하는 걸 추천하지만, 일단 기본형으로 수정해 드릴게요.
-    const unsubscribe = onSnapshot(
-      roomsCollection,
-      (querySnapshot) => {
-        const roomsData: LobbyRoom[] = querySnapshot.docs.map((doc) => {
-          const rawTopic = doc.data().topic || "";
-          const topicParts = rawTopic.split(", ");
-          const firstTopicName = topicMap[topicParts[0]] || "";
-
-          const topicName =
-            topicParts.length > 1
-              ? `${firstTopicName} 외 ${topicParts.length - 1}개`
-              : firstTopicName;
-
-          return {
-            id: doc.id,
-            roomName: doc.data().roomName,
-            topicName,
-            capacity: doc.data().capacity,
-            maxCapacity: doc.data().maxCapacity,
-            playing: doc.data().playing,
-            decision: doc.data().decision,
-          };
-        });
-
-        // 데이터가 비었을 때 처리
-        if (roomsData.length === 0) {
-          setRoomList([]);
-          console.log("No rooms found.");
-        } else {
-          setRoomList(roomsData);
-        }
-
-        console.log("Real-time rooms update:", roomsData);
-      },
-      (error) => {
-        // 에러 처리 (권한 문제 등)
-        console.error("Error fetching rooms in real-time:", error);
-      },
-    );
-
-    return () => unsubscribe();
-  }, [topicMap]);
 
   return (
     <div
@@ -204,7 +73,7 @@ export const Section = () => {
                   text-xl select-none bg-zinc-900
                   hover:bg-zinc-800"
           onClick={() =>
-            !userId
+            !user
               ? setShowAlertModal("로그인 후 이용해주세요!")
               : setRoomDescription("create")
           }
@@ -220,50 +89,48 @@ export const Section = () => {
         className="grid grid-cols-3 gap-5 content-start
                   w-[75%] h-auto select-none"
       >
-        {roomList.length ? (
-          roomList.map((room) => (
-            <div
-              role="button"
-              onClick={() =>
-                enterRoom(
-                  room.id,
-                  room.capacity,
-                  room.maxCapacity,
-                  room.playing,
-                )
-              }
-              className={`relative h-[150px]
+        {roomList.map((room) => (
+          <div
+            role="button"
+            onClick={() => enterRoom(room)}
+            className={`relative h-[150px]
                       flex flex-col
                       p-5
                       rounded-lg
                       ${room.playing ? "bg-zinc-950" : "bg-zinc-900 hover:bg-zinc-800"}`}
-              key={room.id}
-            >
-              <h2 className="w-full text-xl font-bold">{room.roomName}</h2>
-              <p className="w-full text text-zinc-300">{room.topicName}</p>
-              <div
-                className="absolute left-2 bottom-2
+            key={room.id}
+          >
+            <h2 className="w-full text-xl font-bold">{room.roomName}</h2>
+            <p className="w-full text text-zinc-300">{room.topicName}</p>
+            <div
+              className="absolute left-2 bottom-2
                         text mb-1 px-3 py-1
                         text-zinc-400
                         flex items-center justify-center
                         rounded-full"
-              >
-                10문제
-              </div>
-              <div
-                className={`absolute right-3 bottom-2
+            >
+              {room.internalValue == 60 ? "전체" : `${room.internalValue}문제`}
+            </div>
+            <div
+              className={`absolute right-3 bottom-2
                         text ml-5 mb-1 px-3 py-1
                         flex items-center justify-center
                         rounded-full
                         ${room.capacity === room.maxCapacity ? "text-red-500 bg-red-900/20" : "text-white bg-zinc-500/20"}`}
-              >
-                {room.capacity} / {room.maxCapacity}
-              </div>
+            >
+              {room.capacity} / {room.maxCapacity}
             </div>
-          ))
+          </div>
+        ))}
+        {!isPending ? (
+          !roomList.length && (
+            <div className="w-full h-full">
+              <p className="text-zinc-500 text-lg">생성된 방이 없습니다.</p>
+            </div>
+          )
         ) : (
           <div className="w-full h-full">
-            <p className="text-zinc-500 text-lg">생성된 방이 없습니다.</p>
+            <p className="text-zinc-500 text-lg">방을 불러오는 중...</p>
           </div>
         )}
       </div>
@@ -272,24 +139,12 @@ export const Section = () => {
 };
 
 export default function Home() {
-  const [nicknameLoaded, setNicknameLoaded] = useAtom(nicknameLoadedState);
-
   return (
     <div
       className="w-full h-full
                 flex flex-col
                 font-[Pretendard]"
     >
-      {!nicknameLoaded && (
-        <div
-          className="absolute top-0 left-0 w-full h-full
-                bg-zinc-900/50
-                flex justify-center items-center
-                z-100 text-2xl"
-        >
-          로딩 중...
-        </div>
-      )}
       <Header />
       <Section />
     </div>

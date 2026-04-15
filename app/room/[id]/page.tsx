@@ -7,23 +7,16 @@ import {
   Settings,
   SquareArrowRightExit,
 } from "lucide-react";
-import { Chat, Room } from "@/app/atom/lobbyAtom";
 import { usePathname, useRouter } from "next/navigation";
 import { useAtom } from "jotai";
 import { useEffect, useState, useRef } from "react";
 import { setRoomModalState } from "@/app/atom/modalAtom";
 import { db } from "@/app/lib/firebase";
-import {
-  doc,
-  getDocs,
-  onSnapshot,
-  collection,
-  addDoc,
-  query,
-  orderBy,
-} from "firebase/firestore";
-import { roomDataState } from "@/app/atom/roomAtom";
+import { collection, addDoc } from "firebase/firestore";
 import { getDisplayTopic } from "@/app/components/common/utils/topic";
+import { useRoomSubscription } from "@/app/hooks/queries/room/useRoomQuery";
+import { useChatMessages } from "@/app/hooks/queries/room/useChatQuery";
+import { useMutation } from "@tanstack/react-query";
 
 // --- 임시 데이터 (나중에 DB나 소켓에서 가져올 데이터) ---
 const dummyUsers = [
@@ -39,81 +32,9 @@ const Header = () => {
   const router = useRouter();
   const roomId = usePathname().split("/").pop();
 
-  const [roomData, setRoomData] = useAtom(roomDataState);
-  const [topicMap, setTopicMap] = useState<Map<string, string>>(
-    new Map<string, string>(),
-  );
-
-  useEffect(() => {
-    const fetchTopics = async () => {
-      const querySnapshot = await getDocs(collection(db, "topics"));
-
-      const mapping = new Map<string, string>();
-
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data.topicName) {
-          mapping.set(doc.id, data.topicName);
-        }
-      });
-
-      setTopicMap(mapping);
-    };
-
-    fetchTopics();
-  }, []);
-
-  useEffect(() => {
-    if (!roomId) return;
-    const roomDocRef = doc(db, `rooms/${roomId}`);
-
-    const unsubscribe = onSnapshot(
-      roomDocRef,
-      (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          const topics = data.topic.split(", ");
-          const roomTopicMap: Map<string, string> = new Map<string, string>();
-
-          topics.map((id: string) => {
-            const topicName = topicMap.get(id);
-
-            console.log(topicMap);
-
-            if (topicName) roomTopicMap.set(id, topicName);
-          });
-
-          console.log(roomTopicMap);
-
-          const roomData: Room = {
-            id: docSnap.id,
-            roomName: data.roomName,
-            topicItem: roomTopicMap,
-            capacity: data.capacity,
-            maxCapacity: data.maxCapacity,
-            playing: data.playing,
-            decision: data.decision,
-            internalValue: data.internalValue,
-            showPublic: data.showPublic,
-            rank: data.rank,
-          };
-
-          if (roomData) {
-            setRoomData(roomData);
-          }
-        }
-      },
-      (error) => {
-        // 에러 처리 (권한 문제 등)
-        console.error("Error fetching rooms in real-time:", error);
-      },
-    );
-
-    return () => unsubscribe();
-  }, [topicMap]);
+  const { data: roomData } = useRoomSubscription(roomId);
 
   return (
-    // 네온 효과와 약간의 투명도를 준 상단 바
     <header
       className="sticky top-0 z-50 w-full h-20
     bg-zinc-950/80 backdrop-blur-sm border-b
@@ -145,8 +66,11 @@ const Header = () => {
 // ----------------------------------------------------------------
 
 export const RoomInfo = () => {
+  const roomId = usePathname().split("/").pop();
+
   const [, setRoomDescription] = useAtom(setRoomModalState);
-  const [roomData] = useAtom(roomDataState);
+
+  const { data: roomData } = useRoomSubscription(roomId);
 
   return (
     <div
@@ -175,14 +99,16 @@ export const RoomInfo = () => {
 };
 
 const UserList = () => {
-  const [room] = useAtom(roomDataState);
+  const roomId = usePathname().split("/").pop();
+
+  const { data: roomData } = useRoomSubscription(roomId);
 
   return (
     <div className="flex-1 min-w-[300px] bg-zinc-900 rounded-lg border border-zinc-800 p-4 flex flex-col gap-4 shadow-xl">
       <h2 className="text-lg font-semibold text-zinc-300 flex items-center gap-2">
         참여자
         <span className="text-zinc-400">
-          {room?.capacity}/{room?.maxCapacity}
+          {roomData?.capacity}/{roomData?.maxCapacity}
         </span>
       </h2>
       <div className="flex-1 space-y-3 overflow-y-auto pr-2 no-scrollbar">
@@ -224,83 +150,45 @@ const ChatSection = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const roomId = usePathname().split("/").pop();
 
-  const [messages, setMessages] = useState<Chat[]>([]);
+  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    const roomsCollection = collection(db, `rooms/${roomId}/chats`);
-    const q = query(roomsCollection, orderBy("time", "asc"));
+  const { data: messages = [] } = useChatMessages(roomId);
 
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const messageData: Chat[] = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          const timeString = data.time?.toDate().toLocaleTimeString("ko-KR");
-
-          return {
-            id: doc.id,
-            username: data.username,
-            text: data.text,
-            time: timeString || "방금 전",
-            isAdmin: data.isAdmin,
-          };
-        });
-
-        // 데이터가 비었을 때 처리
-        if (messageData.length === 0) {
-          console.log("No messages found.");
-        } else {
-          setMessages(messageData);
-        }
-      },
-      (error) => {
-        // 에러 처리 (권한 문제 등)
-        console.error("Error fetching rooms in real-time:", error);
-      },
-    );
-
-    return () => unsubscribe();
-  }, []);
+  const sendMessageMutation = useMutation({
+    mutationFn: async (text: string) => {
+      const docRef = collection(db, `rooms/${roomId}/chats`);
+      await addDoc(docRef, {
+        username: "Acrylic",
+        text,
+        time: new Date(),
+        isAdmin: true,
+      });
+    },
+    onSuccess: () => setMessage(""),
+    onError: (error: any) => {
+      console.error("전송 에러:", error);
+      alert(
+        error.code === "permission-denied"
+          ? "권한이 없습니다."
+          : "네트워크 오류",
+      );
+    },
+  });
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const [message, setMessage] = useState("");
-
-  const submitMessage = async () => {
-    if (message.trim() === "") return;
-
-    try {
-      const docRef = collection(db, `rooms/${roomId}/chats`);
-
-      await addDoc(docRef, {
-        username: "Acrylic",
-        text: message,
-        time: new Date(),
-        isAdmin: true,
-      });
-    } catch (error: any) {
-      console.error("방 생성 중 에러 발생:", error);
-
-      if (error.code === "permission-denied") {
-        alert("방을 만들 권한이 없습니다. 로그인을 확인해주세요.");
-      } else {
-        alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-      }
-    } finally {
-      setMessage("");
-    }
+  const handleSend = () => {
+    if (message.trim()) sendMessageMutation.mutate(message);
   };
 
   return (
     <div className="flex-[2] min-w-[400px] bg-zinc-900 rounded-lg border border-zinc-800 flex flex-col shadow-xl">
-      {/* 채팅 헤더 */}
       <div className="h-15 flex items-center p-4 border-b border-zinc-800">
         <h2 className="text-lg font-semibold text-zinc-300">채팅</h2>
       </div>
 
-      {/* 채팅 내용 */}
       <div className="flex-1 p-5 space-y-4 overflow-y-auto no-scrollbar text-sm min-h-0">
         {messages.map((msg) => (
           <div
@@ -342,7 +230,6 @@ const ChatSection = () => {
         <div ref={chatEndRef} />
       </div>
 
-      {/* 채팅 입력창 */}
       <div className="p-4 border-t border-zinc-800 flex gap-2">
         <input
           type="text"
@@ -356,7 +243,7 @@ const ChatSection = () => {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") submitMessage();
+            if (e.key === "Enter") handleSend();
           }}
         />
         <button
@@ -368,7 +255,8 @@ const ChatSection = () => {
             ? "bg-indigo-600 hover:bg-indigo-500"
             : "bg-zinc-600 cursor-not-allowed"
         }`}
-          onClick={submitMessage}
+          disabled={sendMessageMutation.isPending}
+          onClick={handleSend}
         >
           <Send />
         </button>
@@ -379,17 +267,14 @@ const ChatSection = () => {
 
 const Section = () => {
   return (
-    // 헤더를 제외한 나머지 화면 (flex 레이아웃 사용)
     <div className="relative w-full h-[calc(100vh-64px)] p-6 md:p-8 flex flex-col gap-6 bg-zinc-950 text-zinc-100">
       <RoomInfo />
 
-      {/* 상단 콘텐츠 영역 (유저 목록 & 채팅) */}
       <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-0">
         <UserList />
         <ChatSection />
       </div>
 
-      {/* 하단 버튼 영역 */}
       <div
         className="h-20 flex flex-row items-center
       justify-center"
@@ -412,7 +297,6 @@ const Section = () => {
 
 export default function RoomPage() {
   return (
-    // 전체 화면 꽉 차게 설정 (h-screen)
     <div className="relative w-full h-screen overflow-hidden bg-zinc-950 font-sans tracking-tight">
       <Header />
       <Section />

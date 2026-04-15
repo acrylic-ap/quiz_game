@@ -8,53 +8,42 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { db } from "@/app/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
 import { useAtom } from "jotai";
 import { alertModalState } from "@/app/atom/modalAtom";
-import { KeyRoom, Room, userIdState } from "@/app/atom/lobbyAtom";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/app/hooks/queries/lobby/useAuth";
+import { useRoomList } from "@/app/hooks/queries/lobby/useLobbyQuery";
 
 export default function RoomCodeModal() {
   const router = useRouter();
   const [, setAlertModal] = useAtom(alertModalState);
   const [roomCode, setRoomCode] = useState("");
-  const [userId] = useAtom(userIdState)
+
+  const { data: user } = useUser();
+  const { data: roomList = [] } = useRoomList();
 
   const handleRoomCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRoomCode(e.target.value);
   };
 
   const enterCodeRoom = () => {
-    if (!userId) return setAlertModal("로그인 후 이용해주세요!");
+    if (!user) return setAlertModal("로그인 후 이용해주세요!");
     if (!roomCode) return setAlertModal("코드를 입력해주세요!");
 
-    // 1. 컬렉션 참조 생성
-    const roomsCollection = collection(db, "rooms");
+    const room = roomList.find((room) => room.id === roomCode);
 
-    // 2. 데이터 가져오기
-    getDocs(roomsCollection).then((querySnapshot) => {
-      const roomsData: KeyRoom[] = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        playing: doc.data().playing,
-        capacity: doc.data().capacity,
-        maxCapacity: doc.data().maxCapacity,
-      }));
-      const room = roomsData.find((room) => room.id === roomCode);
+    if (!room) {
+      setAlertModal("존재하지 않는 코드입니다!");
+      return;
+    } else if (room.playing) {
+      setAlertModal("이미 진행 중인 방입니다!");
+      return;
+    } else if (room.capacity === room.maxCapacity) {
+      setAlertModal("인원이 꽉 찼습니다!");
+      return;
+    }
 
-      if (!room) {
-        setAlertModal("존재하지 않는 코드입니다!");
-        return;
-      } else if (room.playing) {
-        setAlertModal("이미 진행 중인 방입니다!");
-        return;
-      } else if (room.capacity === room.maxCapacity) {
-        setAlertModal("인원이 꽉 찼습니다!");
-        return;
-      }
-
-      router.push(`/room/${roomCode}`);
-    });
+    router.push(`/room/${roomCode}`);
   };
 
   return (

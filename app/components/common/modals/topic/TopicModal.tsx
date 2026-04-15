@@ -40,7 +40,7 @@ export default function TopicModal() {
           description: doc.data().description as string,
           category: doc.data().category as string,
         }));
-        
+
         setTopicList(topics);
       } catch (error) {
         console.error("Error fetching topic list:", error);
@@ -49,7 +49,6 @@ export default function TopicModal() {
 
     fetchTopicList();
   }, []);
-
 
   const handleTopicNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTopicName(e.target.value);

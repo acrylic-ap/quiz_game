@@ -7,6 +7,7 @@ import TopicModal from "./components/common/modals/topic/TopicModal";
 import AlertModal from "./components/common/modals/alert/AlertModal";
 import RoomModal from "./components/common/modals/room/RoomModal";
 import LoginModal from "./components/common/modals/login/LoginModal";
+import Providers from "./providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -34,13 +35,15 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
         />
-        <Provider>
-          <TopicModal />
-          <AlertModal />
-          <RoomModal />
-          <LoginModal />
-          {children}
-        </Provider>
+        <Providers>
+          <Provider>
+            <TopicModal />
+            <AlertModal />
+            <RoomModal />
+            <LoginModal />
+            {children}
+          </Provider>
+        </Providers>
       </body>
     </html>
   );

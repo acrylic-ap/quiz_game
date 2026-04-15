@@ -36,18 +36,8 @@ export interface LobbyRoom {
   capacity: number;
   maxCapacity: number;
   playing: boolean;
+  internalValue: number;
   decision: DecisionType;
 }
 
-export interface KeyRoom {
-  id: string;
-  capacity: number;
-  maxCapacity: number;
-  playing: boolean;
-}
-
 export const roomListState = atom<LobbyRoom[]>([]);
-
-export const userIdState = atom<string>("");
-export const nicknameState = atom<string>("");
-export const nicknameLoadedState = atom<boolean>(false);

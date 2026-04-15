@@ -19,153 +19,134 @@ import {
 import { pickedTopicAtom } from "@/app/atom/topicAtom";
 import { internalValueAtom } from "@/app/atom/roomModalAtom";
 import { db } from "@/app/lib/firebase";
-import { getDoc, doc, setDoc } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import { getDoc, doc, setDoc, updateDoc } from "firebase/firestore";
+import { usePathname, useRouter } from "next/navigation";
 import { generateRoomId } from "@/app/lib/utils";
-import { roomDataState } from "@/app/atom/roomAtom";
 import { DECISION_LIST, DecisionType } from "@/app/atom/lobbyAtom";
 import { getDisplayTopic } from "../../utils/topic";
+import { useRoomSubscription } from "@/app/hooks/queries/room/useRoomQuery";
 
 export default function RoomModal() {
   const router = useRouter();
+  const roomId = usePathname().split("/").pop();
 
+  // Atoms
   const [roomDescription, setRoomDescription] = useAtom(setRoomModalState);
   const [, setAlertModal] = useAtom(alertModalState);
   const [, setShowTopicModal] = useAtom(showTopicModalState);
-
-  // decision
-  const [decision, setDecision] = useState<DecisionType>("random");
-
-  // info tooltip
-  const [showTopicInfo, setShowTopicInfo] = useState(false);
-  const [showScoreInfo, setShowScoreInfo] = useState(false);
-
-  // room info
-  const [selectedCapacity, setSelectedCapacity] = useState(2);
-  const [rank, setRank] = useState<"count" | "time">("count");
-  const [showPublic, setShowPublic] = useState(true);
   const [pickedTopic, setPickedTopic] = useAtom(pickedTopicAtom);
   const [internalValue, setInternalValue] = useAtom(internalValueAtom);
 
+  const { data: room } = useRoomSubscription(roomId);
+
+  // Local States
   const [roomName, setRoomName] = useState("");
-  const handleRoomNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRoomName(e.target.value);
-  };
+  const [decision, setDecision] = useState<DecisionType>("random");
+  const [selectedCapacity, setSelectedCapacity] = useState(2);
+  const [rank, setRank] = useState<"count" | "time">("count");
+  const [showPublic, setShowPublic] = useState(true);
+  const [showTopicInfo, setShowTopicInfo] = useState(false);
+  const [showScoreInfo, setShowScoreInfo] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const [room] = useAtom(roomDataState);
-
+  // 수정 모드일 때 기존 데이터 세팅
   useEffect(() => {
-    if (roomDescription === "edit") {
-      if (room?.decision) setDecision(room?.decision);
-      if (room?.internalValue) setInternalValue(room?.internalValue);
-      if (room?.showPublic) setShowPublic(room?.showPublic);
-      if (room?.rank) setRank(room?.rank);
+    if (roomDescription === "edit" && room) {
+      setRoomName(room.roomName || "");
+      setDecision(room.decision || "random");
+      setInternalValue(room.internalValue || 10);
+      setShowPublic(room.showPublic ?? true);
+      setRank(room.rank || "count");
+      setSelectedCapacity(room.maxCapacity || 2);
 
-      if (room?.maxCapacity) setSelectedCapacity(room?.maxCapacity);
-      if (room?.roomName) setRoomName(room?.roomName);
-      if (room?.topicItem) {
-        const newMap = new Map<string, string>(room?.topicItem);
-
-        console.log(newMap);
-
-        setPickedTopic(newMap);
+      if (room.topicItem) {
+        setPickedTopic(new Map(room.topicItem));
       }
+    } else if (roomDescription === "create") {
+      // 생성 모드 진입 시 초기화가 필요하다면 여기서 수행
+      setRoomName("");
     }
-  }, [roomDescription]);
+  }, [roomDescription, room, setInternalValue, setPickedTopic]);
 
   const isRoomValid = () => {
-    if (!roomName.length) {
+    if (!roomName.trim()) {
       setAlertModal("방 제목을 입력하세요.");
       return false;
     }
-
-    if (!pickedTopic.size) {
+    if (pickedTopic.size === 0) {
       setAlertModal("주제를 선택하세요.");
       return false;
     }
-
     return true;
   };
 
-  const [isCreating, setIsCreating] = useState(false); // 로딩 상태 추가
+  // 방 생성/수정 공통 데이터 객체
+  const getRoomPayload = () => ({
+    roomName: roomName.trim(),
+    maxCapacity: selectedCapacity,
+    decision: decision,
+    rank: rank,
+    showPublic: showPublic,
+    topic: [...pickedTopic.keys()].join(", "),
+    internalValue: internalValue || "",
+    updatedAt: new Date(),
+  });
 
-  const createRoom = async () => {
-    if (isCreating || !isRoomValid()) return;
-
-    setIsCreating(true);
-
-    let customId = "";
-    let isUnique = false;
-
-    // 1. 중복되지 않는 ID를 찾을 때까지 무한 루프 (알고리즘의 BFS/DFS 탐색 느낌)
-    while (!isUnique) {
-      customId = generateRoomId();
-      const docRef = doc(db, "rooms", customId);
-      const docSnap = await getDoc(docRef);
-
-      if (!docSnap.exists()) {
-        isUnique = true; // DB에 없어야만 통과!
-      } else {
-        console.log(`ID 충돌 발생: ${customId}, 다시 생성합니다.`);
-      }
-    }
+  const handleCreateRoom = async () => {
+    if (isProcessing || !isRoomValid()) return;
+    setIsProcessing(true);
 
     try {
+      let customId = "";
+      let isUnique = false;
+
+      while (!isUnique) {
+        customId = generateRoomId();
+        const docRef = doc(db, "rooms", customId);
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) isUnique = true;
+      }
+
       await setDoc(doc(db, "rooms", customId), {
-        roomName: roomName,
-        capacity: 1,
-        maxCapacity: selectedCapacity,
-        decision: decision ?? "vote",
-        rank: rank ?? "count",
-        showPublic: showPublic ?? true,
-        topic: [...pickedTopic.keys()].join(", "),
-        internalValue: internalValue || "",
+        ...getRoomPayload(),
+        capacity: 1, // 방장은 자동으로 참여하므로 1
         createdAt: new Date(),
         playing: false,
       });
 
       setRoomDescription(null);
-
       router.push(`/room/${customId}`);
     } catch (error: any) {
-      console.error("방 생성 중 에러 발생:", error);
-
-      if (error.code === "permission-denied") {
-        alert("방을 만들 권한이 없습니다. 로그인을 확인해주세요.");
-      } else {
-        alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-      }
+      console.error("방 생성 에러:", error);
+      alert("방 생성 중 오류가 발생했습니다.");
     } finally {
-      setIsCreating(false);
+      setIsProcessing(false);
     }
   };
 
-  const updateRoom = () => {
-    if (isRoomValid()) return;
-  };
+  const handleUpdateRoom = async () => {
+    if (isProcessing || !isRoomValid() || !room?.id) return;
+    setIsProcessing(true);
 
-  const showTopic = () => {
-    if (!pickedTopic.size) return "주제가 선택되지 않았습니다.";
-
-    const firstTopic = pickedTopic.values().next().value;
-
-    if (!firstTopic) return "주제가 선택되지 않았습니다.";
-
-    if (pickedTopic.size === 1) return firstTopic;
-    else return `${firstTopic} 외 ${pickedTopic.size - 1}개`;
-  };
-
-  const isOpen: boolean = !!roomDescription;
-
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      // 모달을 닫을 때는 무조건 null로 초기화
+    try {
+      const docRef = doc(db, "rooms", room.id);
+      await updateDoc(docRef, getRoomPayload());
       setRoomDescription(null);
+    } catch (error) {
+      console.error("방 수정 에러:", error);
+      alert("방 정보를 수정하는데 실패했습니다.");
+    } finally {
+      setIsProcessing(false);
     }
   };
+
+  const isOpen = !!roomDescription;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !open && setRoomDescription(null)}
+    >
       <DialogContent className="bg-zinc-950 text-zinc-100 select-none">
         <DialogHeader className="text-center mt-5">
           <DialogTitle className="text-2xl">
@@ -174,17 +155,14 @@ export default function RoomModal() {
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* 방 제목 입력 */}
           <div className="flex flex-col space-y-2 mb-5">
             <input
               type="text"
-              id="room-name"
               placeholder="방 제목을 입력하세요"
-              className="bg-zinc-900 text-zinc-100
-              rounded pl-2 py-3
-              outline-none
-              placeholder:text-zinc-500"
+              className="bg-zinc-900 text-zinc-100 rounded pl-2 py-3 outline-none placeholder:text-zinc-500"
               value={roomName}
-              onChange={handleRoomNameChange}
+              onChange={(e) => setRoomName(e.target.value)}
             />
           </div>
           <div
@@ -222,7 +200,7 @@ export default function RoomModal() {
             {showTopicInfo && (
               <div
                 className="absolute -bottom-24 px-2 py-1 rounded bg-zinc-800 text-sm whitespace-pre-wrap
-                z-11"
+      z-11"
                 onClick={() => setShowTopicInfo(false)}
               >
                 {`복수 주제 선택 시 결정 방식
@@ -231,20 +209,20 @@ export default function RoomModal() {
 항시 랜덤: 매 라운드마다 무작위 변경`}
               </div>
             )}
-            <label>{showTopic()}</label>
+            <label>{getDisplayTopic(pickedTopic)}</label>
             <div className="absolute right-0">
               <button
                 className="px-3 py-1 mr-1 rounded
-              text bg-zinc-900
-              hover:bg-zinc-800"
+      text bg-zinc-900
+      hover:bg-zinc-800"
                 onClick={() => setShowTopicModal(true)}
               >
                 ...
               </button>
               <button
                 className="px-3 py-1 mr-1 rounded
-              text bg-zinc-900
-              hover:bg-zinc-800"
+      text bg-zinc-900
+      hover:bg-zinc-800"
                 onClick={() =>
                   setDecision(DECISION_LIST[decision].next as DecisionType)
                 }
@@ -253,10 +231,14 @@ export default function RoomModal() {
               </button>
             </div>
           </div>
+
+          {/* 문제 개수 슬라이더 */}
           <div className="flex flex-row items-center">
             <h2 className="font-bold text-lg mr-12">문제 개수</h2>
             <StepSlider />
           </div>
+
+          {/* 공개 여부 스위치 */}
           <div className="flex flex-row items-center mb-5">
             <h2 className="font-bold text-lg mr-4">공개</h2>
             <Switch
@@ -265,37 +247,35 @@ export default function RoomModal() {
               onCheckedChange={setShowPublic}
             />
           </div>
+
+          {/* 점수 획득 기준 */}
           <div className="relative flex flex-row items-center">
             <h2 className="font-bold text-lg mr-2">점수 획득 기준</h2>
             <CircleQuestionMark
               size={17}
-              className="mr-4"
+              className="mr-4 cursor-pointer"
               onClick={() => setShowScoreInfo(!showScoreInfo)}
             />
             {showScoreInfo && (
               <div
-                className="absolute -bottom-13 px-2 py-1 rounded bg-zinc-800 text-sm whitespace-pre-wrap
-                z-1"
+                className="absolute -bottom-13 px-2 py-1 rounded bg-zinc-800 text-sm whitespace-pre-wrap z-20"
                 onClick={() => setShowScoreInfo(false)}
               >
-                {`개수: 맞힌 개수
-시간: 시간 비례 점수`}
+                {`개수: 맞힌 개수\n시간: 시간 비례 점수`}
               </div>
             )}
             <button
-              className={`px-3 py-1 mr-1 rounded
-              text 
-              hover:bg-zinc-900
-              ${rank === "count" ? "bg-zinc-900" : "bg-zinc-800"}`}
+              className={`px-3 py-1 mr-1 rounded hover:bg-zinc-900 transition-colors ${
+                rank === "count" ? "bg-zinc-900" : "bg-zinc-800 text-zinc-400"
+              }`}
               onClick={() => setRank("count")}
             >
               개수
             </button>
             <button
-              className={`px-3 py-1 mr-1 rounded
-              text
-              hover:bg-zinc-900
-              ${rank === "time" ? "bg-zinc-900" : "bg-zinc-800"}`}
+              className={`px-3 py-1 rounded hover:bg-zinc-900 transition-colors ${
+                rank === "time" ? "bg-zinc-900" : "bg-zinc-800 text-zinc-400"
+              }`}
               onClick={() => setRank("time")}
             >
               시간
@@ -303,17 +283,22 @@ export default function RoomModal() {
           </div>
         </div>
 
-        <div className="flex justify-center">
+        {/* 하단 버튼 */}
+        <div className="flex justify-center mt-6">
           <button
-            className={`w-30 px-6 py-2 rounded
-              text bg-zinc-900
-              hover:bg-zinc-800
-              ${isCreating && "cursor-not-allowed opacity-50"}
-              `}
-            onClick={roomDescription === "create" ? createRoom : updateRoom}
-            disabled={isCreating}
+            className={`w-30 py-2 rounded text bg-zinc-900 hover:bg-zinc-800 transition-all ${
+              isProcessing ? "cursor-not-allowed opacity-50" : ""
+            }`}
+            onClick={
+              roomDescription === "create" ? handleCreateRoom : handleUpdateRoom
+            }
+            disabled={isProcessing}
           >
-            {roomDescription === "create" ? "생성" : "수정"}
+            {isProcessing
+              ? "처리 중..."
+              : roomDescription === "create"
+                ? "생성"
+                : "수정"}
           </button>
         </div>
       </DialogContent>
