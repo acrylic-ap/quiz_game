@@ -1,4 +1,5 @@
 import { atom } from "jotai";
+import { RoomUser } from "../hooks/queries/room/useRoomUsers";
 
 export interface Chat {
   id: string;

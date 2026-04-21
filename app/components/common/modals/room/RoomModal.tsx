@@ -18,13 +18,15 @@ import {
 } from "@/app/atom/modalAtom";
 import { pickedTopicAtom } from "@/app/atom/topicAtom";
 import { internalValueAtom } from "@/app/atom/roomModalAtom";
-import { db } from "@/app/lib/firebase";
-import { getDoc, doc, setDoc, updateDoc } from "firebase/firestore";
+import { db, rtdb } from "@/app/lib/firebase"; // rtdb 임포트 확인 필요
+import { getDoc, doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { ref, set, update } from "firebase/database"; // RTDB 함수 추가
 import { usePathname, useRouter } from "next/navigation";
 import { generateRoomId } from "@/app/lib/utils";
 import { DECISION_LIST, DecisionType } from "@/app/atom/lobbyAtom";
 import { getDisplayTopic } from "../../utils/topic";
 import { useRoomSubscription } from "@/app/hooks/queries/room/useRoomQuery";
+import { useUser } from "@/app/hooks/queries/lobby/useAuth";
 
 export default function RoomModal() {
   const router = useRouter();
@@ -38,6 +40,7 @@ export default function RoomModal() {
   const [internalValue, setInternalValue] = useAtom(internalValueAtom);
 
   const { data: room } = useRoomSubscription(roomId);
+  const { data: user } = useUser();
 
   // Local States
   const [roomName, setRoomName] = useState("");
@@ -63,7 +66,6 @@ export default function RoomModal() {
         setPickedTopic(new Map(room.topicItem));
       }
     } else if (roomDescription === "create") {
-      // 생성 모드 진입 시 초기화가 필요하다면 여기서 수행
       setRoomName("");
     }
   }, [roomDescription, room, setInternalValue, setPickedTopic]);
@@ -93,7 +95,7 @@ export default function RoomModal() {
   });
 
   const handleCreateRoom = async () => {
-    if (isProcessing || !isRoomValid()) return;
+    if (isProcessing || !isRoomValid() || !user) return;
     setIsProcessing(true);
 
     try {
@@ -107,11 +109,32 @@ export default function RoomModal() {
         if (!docSnap.exists()) isUnique = true;
       }
 
+      // 1. Firestore 방 생성
+      const payload = getRoomPayload();
       await setDoc(doc(db, "rooms", customId), {
-        ...getRoomPayload(),
-        capacity: 1, // 방장은 자동으로 참여하므로 1
+        ...payload,
+        capacity: 1,
         createdAt: new Date(),
         playing: false,
+      });
+
+      // 2. RTDB 실시간 세션 생성 (추가됨)
+      await set(ref(rtdb, `room_sessions/${customId}`), {
+        status: "waiting",
+        currentRound: 0,
+        config: {
+          roomName: payload.roomName,
+          maxCapacity: payload.maxCapacity,
+          rank: payload.rank,
+        },
+        users: {
+          [user?.uid]: {
+            nickname: user.nickname,
+            isOwner: true,
+            jointedAt: serverTimestamp(),
+          }
+        }, // 입장 시 여기에 push
+        messages: {}, // 채팅 노드
       });
 
       setRoomDescription(null);
@@ -129,8 +152,19 @@ export default function RoomModal() {
     setIsProcessing(true);
 
     try {
+      const payload = getRoomPayload();
+      
+      // 1. Firestore 수정
       const docRef = doc(db, "rooms", room.id);
-      await updateDoc(docRef, getRoomPayload());
+      await updateDoc(docRef, payload);
+
+      // 2. RTDB 설정 동기화 (추가됨)
+      await update(ref(rtdb, `room_sessions/${room.id}/config`), {
+        roomName: payload.roomName,
+        maxCapacity: payload.maxCapacity,
+        rank: payload.rank,
+      });
+
       setRoomDescription(null);
     } catch (error) {
       console.error("방 수정 에러:", error);
@@ -142,40 +176,32 @@ export default function RoomModal() {
 
   const isOpen = !!roomDescription;
 
+  // ... 이하 디자인 및 JSX 로직 동일 (생략)
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => !open && setRoomDescription(null)}
     >
       <DialogContent className="bg-zinc-950 text-zinc-100 select-none">
-        <DialogHeader className="text-center mt-5">
+        <DialogHeader className="text-center">
           <DialogTitle className="text-2xl">
             {roomDescription === "create" ? "방 생성" : "방 수정"}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* 방 제목 입력 */}
           <div className="flex flex-col space-y-2 mb-5">
             <input
               type="text"
               placeholder="방 제목을 입력하세요"
-              className="bg-zinc-900 text-zinc-100 rounded pl-2 py-3 outline-none placeholder:text-zinc-500"
+              className="bg-zinc-900 text-zinc-100 rounded-lg pl-3 py-3 outline-none placeholder:text-zinc-500"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
             />
           </div>
-          <div
-            className="relative w-full mb-5
-            flex flex-row items-center space-x-2"
-          >
+          <div className="relative w-full mb-5 flex flex-row items-center space-x-2">
             <h2 className="shrink-0 text-lg font-bold">인원</h2>
-            <div
-              className="group w-full flex flex-row justify-center gap-2
-              [&_svg]:group-hover:text-zinc-500
-              [&>button:has(~_button:hover)_svg]:text-white
-              [&>button:hover_svg]:text-white"
-            >
+            <div className="group w-full flex flex-row justify-center gap-2 [&_svg]:group-hover:text-zinc-500 [&>button:has(~_button:hover)_svg]:text-white [&>button:hover_svg]:text-white">
               {Array.from({ length: 8 }).map((_, index) => (
                 <button
                   key={index}
@@ -183,8 +209,7 @@ export default function RoomModal() {
                   className="group"
                 >
                   <User
-                    className={`transition-colors duration-200
-          ${selectedCapacity >= index + 1 ? "text-white" : "text-zinc-500"}`}
+                    className={`transition-colors duration-200 ${selectedCapacity >= index + 1 ? "text-white" : "text-zinc-500"}`}
                   />
                 </button>
               ))}
@@ -199,8 +224,7 @@ export default function RoomModal() {
             />
             {showTopicInfo && (
               <div
-                className="absolute -bottom-24 px-2 py-1 rounded bg-zinc-800 text-sm whitespace-pre-wrap
-      z-11"
+                className="absolute -bottom-24 px-2 py-1 rounded bg-zinc-800 text-sm whitespace-pre-wrap z-11"
                 onClick={() => setShowTopicInfo(false)}
               >
                 {`복수 주제 선택 시 결정 방식
@@ -212,17 +236,13 @@ export default function RoomModal() {
             <label>{getDisplayTopic(pickedTopic)}</label>
             <div className="absolute right-0">
               <button
-                className="px-3 py-1 mr-1 rounded
-      text bg-zinc-900
-      hover:bg-zinc-800"
+                className="px-3 py-1 mr-1 rounded text bg-zinc-900 hover:bg-zinc-800"
                 onClick={() => setShowTopicModal(true)}
               >
                 ...
               </button>
               <button
-                className="px-3 py-1 mr-1 rounded
-      text bg-zinc-900
-      hover:bg-zinc-800"
+                className="px-3 py-1 mr-1 rounded text bg-zinc-900 hover:bg-zinc-800"
                 onClick={() =>
                   setDecision(DECISION_LIST[decision].next as DecisionType)
                 }
@@ -232,13 +252,11 @@ export default function RoomModal() {
             </div>
           </div>
 
-          {/* 문제 개수 슬라이더 */}
           <div className="flex flex-row items-center">
             <h2 className="font-bold text-lg mr-12">문제 개수</h2>
             <StepSlider />
           </div>
 
-          {/* 공개 여부 스위치 */}
           <div className="flex flex-row items-center mb-5">
             <h2 className="font-bold text-lg mr-4">공개</h2>
             <Switch
@@ -248,7 +266,6 @@ export default function RoomModal() {
             />
           </div>
 
-          {/* 점수 획득 기준 */}
           <div className="relative flex flex-row items-center">
             <h2 className="font-bold text-lg mr-2">점수 획득 기준</h2>
             <CircleQuestionMark
@@ -283,7 +300,6 @@ export default function RoomModal() {
           </div>
         </div>
 
-        {/* 하단 버튼 */}
         <div className="flex justify-center mt-6">
           <button
             className={`w-30 py-2 rounded text bg-zinc-900 hover:bg-zinc-800 transition-all ${

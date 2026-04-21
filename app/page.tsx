@@ -8,14 +8,39 @@ import {
   loginModalState,
   setRoomModalState,
 } from "./atom/modalAtom";
-import { useRouter } from "next/navigation";
 import { useUser } from "./hooks/queries/lobby/useAuth";
 import { useRoomList } from "./hooks/queries/lobby/useLobbyQuery";
+import { useState } from "react";
+import { getAuth, signOut } from "firebase/auth";
+import UserInfoModal from "./components/main/modals/user_info/UserInfoModal";
+import { useRoomNavigation } from "./hooks/queries/room/useRoomNavigation";
 
 export const Header = () => {
   const [, setShowLoginModal] = useAtom(loginModalState);
+  const [, setAlertModal] = useAtom(alertModalState);
+  const [infoDropdown, setInfoDropdown] = useState(false);
 
   const { data: user, isLoading } = useUser();
+
+  const handleLogout = async () => {
+    const auth = getAuth();
+
+    try {
+      await signOut(auth);
+      console.log("로그아웃 성공");
+    } catch (error) {
+      console.error("로그아웃 중 오류 발생:", error);
+    }
+  };
+
+  const ALL_DROPDOWN_ITEMS = [
+    { label: "전적", link: "/rank", adminOnly: false },
+    { label: "퀴즈 관리", link: "/quiz", adminOnly: false },
+    { label: "사용자 관리", link: "/admin/users", adminOnly: true }, // 관리자 전용 예시
+    { label: "로그아웃", onClick: handleLogout, adminOnly: false },
+  ];
+
+  const dropdownItems = ALL_DROPDOWN_ITEMS.filter((item) => !item.adminOnly);
 
   return (
     <div
@@ -31,9 +56,35 @@ export const Header = () => {
           {isLoading ? (
             <span>...</span>
           ) : (
-            <button onClick={() => (!user ? setShowLoginModal(true) : false)}>
+            <button
+              onClick={() =>
+                !user ? setShowLoginModal(true) : setInfoDropdown(!infoDropdown)
+              }
+            >
               {user ? user.nickname : "로그인"}
             </button>
+          )}
+          {user && infoDropdown && (
+            <div
+              className="absolute w-30 mt-2 pt-2 px-2 right-0
+              bg-zinc-800 rounded
+              text-center text-zinc-100"
+            >
+              <UserInfoModal user={user} />
+              {dropdownItems.map((item) => (
+                <p
+                  className="hover:bg-zinc-700 mb-2"
+                  key={item.label}
+                  onClick={
+                    item.onClick
+                      ? item.onClick
+                      : () => setAlertModal("추후에 출시됩니다.")
+                  }
+                >
+                  {item.label}
+                </p>
+              ))}
+            </div>
           )}
         </div>
       </div>
@@ -43,20 +94,14 @@ export const Header = () => {
 
 export const Section = () => {
   const [, setRoomDescription] = useAtom(setRoomModalState);
-  const [, setShowAlertModal] = useAtom(alertModalState);
+  const [, setAlertModal] = useAtom(alertModalState);
   const { data: user } = useUser();
 
-  const router = useRouter();
-
   const { data: roomList = [], isPending } = useRoomList();
+  const { handleEnterRoom } = useRoomNavigation(user, setAlertModal);
 
   const enterRoom = (room: LobbyRoom) => {
-    if (!user) return setShowAlertModal("로그인 후 이용해주세요!");
-    if (room.playing) return setShowAlertModal("이미 진행 중인 방입니다!");
-    if (room.capacity === room.maxCapacity)
-      return setShowAlertModal("인원이 꽉 찼습니다!");
-
-    router.push(`/room/${room.id}`);
+    handleEnterRoom(room);
   };
 
   return (
@@ -74,7 +119,7 @@ export const Section = () => {
                   hover:bg-zinc-800"
           onClick={() =>
             !user
-              ? setShowAlertModal("로그인 후 이용해주세요!")
+              ? setAlertModal("로그인 후 이용해주세요!")
               : setRoomDescription("create")
           }
         >

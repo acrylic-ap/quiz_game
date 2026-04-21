@@ -11,20 +11,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAtom } from "jotai";
 import { useEffect, useState, useRef } from "react";
 import { setRoomModalState } from "@/app/atom/modalAtom";
-import { db } from "@/app/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { db, rtdb } from "@/app/lib/firebase";
+import { collection, addDoc, deleteDoc, doc } from "firebase/firestore";
 import { getDisplayTopic } from "@/app/components/common/utils/topic";
 import { useRoomSubscription } from "@/app/hooks/queries/room/useRoomQuery";
 import { useChatMessages } from "@/app/hooks/queries/room/useChatQuery";
 import { useMutation } from "@tanstack/react-query";
-
-// --- 임시 데이터 (나중에 DB나 소켓에서 가져올 데이터) ---
-const dummyUsers = [
-  { id: 1, name: "김개발", avatar: "👤", isReady: true, isAdmin: true },
-  { id: 2, name: "박리액트", avatar: "⚛️", isReady: true, isAdmin: false },
-  { id: 3, name: "이테일", avatar: "🎨", isReady: false, isAdmin: false },
-  { id: 4, name: "최조타이", avatar: "👻", isReady: false, isAdmin: false },
-];
+import { ref, remove } from "firebase/database";
+import { useRoomUsers } from "@/app/hooks/queries/room/useRoomUsers";
+import { useUser } from "@/app/hooks/queries/lobby/useAuth";
 
 // =========================================================
 
@@ -33,6 +28,28 @@ const Header = () => {
   const roomId = usePathname().split("/").pop();
 
   const { data: roomData } = useRoomSubscription(roomId);
+  const { data: users } = useRoomUsers(roomId);
+  const { data: user } = useUser();
+
+  const handleExit = async () => {
+    if (!users || !user) return;
+
+    const currentUser = users.find((u) => u.id === user.uid);
+
+    if (!roomId || !currentUser) return;
+
+    if (currentUser.isOwner) {
+      // 1. RTDB 세션 폭파 (연결된 모든 유저에게 영향)
+      await remove(ref(rtdb, `room_sessions/${roomId}`));
+      // 2. Firestore 방 목록 삭제
+      await deleteDoc(doc(db, "rooms", roomId));
+    } else {
+      // 일반 유저라면 본인 노드만 삭제 (위에서 짠 onDisconnect와 별개로 즉시 실행)
+      await remove(ref(rtdb, `room_sessions/${roomId}/users/${user.uid}`));
+    }
+
+    router.push("/");
+  };
 
   return (
     <header
@@ -50,9 +67,7 @@ const Header = () => {
       <button
         className="rounded-xl
             text-lg font-semibold transition active:scale-95"
-        onClick={() => {
-          router.push("/");
-        }}
+        onClick={handleExit}
       >
         <SquareArrowRightExit
           size={25}
@@ -100,19 +115,27 @@ export const RoomInfo = () => {
 
 const UserList = () => {
   const roomId = usePathname().split("/").pop();
-
   const { data: roomData } = useRoomSubscription(roomId);
 
+  const { data: users = [] } = useRoomUsers(roomId);
+
   return (
-    <div className="flex-1 min-w-[300px] bg-zinc-900 rounded-lg border border-zinc-800 p-4 flex flex-col gap-4 shadow-xl">
-      <h2 className="text-lg font-semibold text-zinc-300 flex items-center gap-2">
+    <div
+      className="flex-1 min-w-[300px] bg-zinc-900
+          rounded-lg border border-zinc-800 p-4
+          flex flex-col gap-4 shadow-xl"
+    >
+      <h2
+        className="flex items-center gap-2
+          text-lg text-zinc-300 font-semibold"
+      >
         참여자
         <span className="text-zinc-400">
-          {roomData?.capacity}/{roomData?.maxCapacity}
+          {users?.length}/{roomData?.maxCapacity}
         </span>
       </h2>
       <div className="flex-1 space-y-3 overflow-y-auto pr-2 no-scrollbar">
-        {dummyUsers.map((user) => (
+        {users.map((user) => (
           <div
             key={user.id}
             className="flex items-center justify-between
@@ -123,16 +146,13 @@ const UserList = () => {
               <div className="text-3xl">{user.avatar}</div>
               <div>
                 <div className="font-semibold text-zinc-100 flex items-center gap-1.5">
-                  {user.name}
-                  {user.isAdmin && <span className="text-xs">👑</span>}
-                </div>
-                <div className="text-xs text-zinc-500">
-                  #{user.id.toString().padStart(4, "0")}
+                  {user.nickname}
+                  {user.isOwner && <span className="text-xs">👑</span>}
                 </div>
               </div>
             </div>
             {/* 상태 표시 */}
-            {!user.isAdmin && (
+            {!user.isOwner && (
               <div
                 className={`text-sm px-3 py-1 rounded-lg ${user.isReady ? "bg-emerald-950 text-emerald-300" : "bg-zinc-700 text-zinc-400"}`}
               >

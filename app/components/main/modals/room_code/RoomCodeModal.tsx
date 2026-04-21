@@ -13,6 +13,8 @@ import { alertModalState } from "@/app/atom/modalAtom";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/app/hooks/queries/lobby/useAuth";
 import { useRoomList } from "@/app/hooks/queries/lobby/useLobbyQuery";
+import { useRoomNavigation } from "@/app/hooks/queries/room/useRoomNavigation";
+import { useRoomUsers } from "@/app/hooks/queries/room/useRoomUsers";
 
 export default function RoomCodeModal() {
   const router = useRouter();
@@ -21,29 +23,18 @@ export default function RoomCodeModal() {
 
   const { data: user } = useUser();
   const { data: roomList = [] } = useRoomList();
+  const { handleEnterRoom } = useRoomNavigation(user, setAlertModal);
 
   const handleRoomCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRoomCode(e.target.value);
   };
 
   const enterCodeRoom = () => {
-    if (!user) return setAlertModal("로그인 후 이용해주세요!");
     if (!roomCode) return setAlertModal("코드를 입력해주세요!");
 
     const room = roomList.find((room) => room.id === roomCode);
 
-    if (!room) {
-      setAlertModal("존재하지 않는 코드입니다!");
-      return;
-    } else if (room.playing) {
-      setAlertModal("이미 진행 중인 방입니다!");
-      return;
-    } else if (room.capacity === room.maxCapacity) {
-      setAlertModal("인원이 꽉 찼습니다!");
-      return;
-    }
-
-    router.push(`/room/${roomCode}`);
+    if (room) handleEnterRoom(room);
   };
 
   return (
