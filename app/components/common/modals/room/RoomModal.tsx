@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { CircleQuestionMark, User } from "lucide-react";
+import { CircleQuestionMark, Plus, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { StepSlider } from "./components/Slider";
 import { useAtom } from "jotai";
@@ -17,9 +17,15 @@ import {
   showTopicModalState,
 } from "@/app/atom/modalAtom";
 import { pickedTopicAtom } from "@/app/atom/topicAtom";
-import { internalValueAtom } from "@/app/atom/roomModalAtom";
+import { decisionAtom, internalValueAtom } from "@/app/atom/roomModalAtom";
 import { db, rtdb } from "@/app/lib/firebase"; // rtdb 임포트 확인 필요
-import { getDoc, doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import {
+  getDoc,
+  doc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { ref, set, update } from "firebase/database"; // RTDB 함수 추가
 import { usePathname, useRouter } from "next/navigation";
 import { generateRoomId } from "@/app/lib/utils";
@@ -38,17 +44,16 @@ export default function RoomModal() {
   const [, setShowTopicModal] = useAtom(showTopicModalState);
   const [pickedTopic, setPickedTopic] = useAtom(pickedTopicAtom);
   const [internalValue, setInternalValue] = useAtom(internalValueAtom);
+  const [decision, setDecision] = useAtom(decisionAtom);
 
   const { data: room } = useRoomSubscription(roomId);
   const { data: user } = useUser();
 
   // Local States
   const [roomName, setRoomName] = useState("");
-  const [decision, setDecision] = useState<DecisionType>("random");
   const [selectedCapacity, setSelectedCapacity] = useState(2);
   const [rank, setRank] = useState<"count" | "time">("count");
   const [showPublic, setShowPublic] = useState(true);
-  const [showTopicInfo, setShowTopicInfo] = useState(false);
   const [showScoreInfo, setShowScoreInfo] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -132,7 +137,7 @@ export default function RoomModal() {
             nickname: user.nickname,
             isOwner: true,
             jointedAt: serverTimestamp(),
-          }
+          },
         }, // 입장 시 여기에 push
         messages: {}, // 채팅 노드
       });
@@ -153,7 +158,7 @@ export default function RoomModal() {
 
     try {
       const payload = getRoomPayload();
-      
+
       // 1. Firestore 수정
       const docRef = doc(db, "rooms", room.id);
       await updateDoc(docRef, payload);
@@ -176,7 +181,8 @@ export default function RoomModal() {
 
   const isOpen = !!roomDescription;
 
-  // ... 이하 디자인 및 JSX 로직 동일 (생략)
+  const titleStyle = `text-zinc-300 font-bold text-lg`;
+
   return (
     <Dialog
       open={isOpen}
@@ -194,13 +200,17 @@ export default function RoomModal() {
             <input
               type="text"
               placeholder="방 제목을 입력하세요"
-              className="bg-zinc-900 text-zinc-100 rounded-lg pl-3 py-3 outline-none placeholder:text-zinc-500"
+              className="bg-zinc-900 text-zinc-100 rounded-lg pl-4 py-3 outline-none placeholder:text-zinc-500"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
             />
           </div>
-          <div className="relative w-full mb-5 flex flex-row items-center space-x-2">
-            <h2 className="shrink-0 text-lg font-bold">인원</h2>
+
+          <div
+            className="relative w-full mb-5
+            flex flex-row items-center space-x-2"
+          >
+            <h2 className={`${titleStyle} shrink-0`}>인원</h2>
             <div className="group w-full flex flex-row justify-center gap-2 [&_svg]:group-hover:text-zinc-500 [&>button:has(~_button:hover)_svg]:text-white [&>button:hover_svg]:text-white">
               {Array.from({ length: 8 }).map((_, index) => (
                 <button
@@ -215,59 +225,32 @@ export default function RoomModal() {
               ))}
             </div>
           </div>
-          <div className="relative flex flex-row items-center space-x-2">
-            <h2 className="font-bold text-lg mr-2">주제</h2>
-            <CircleQuestionMark
-              size={17}
-              className="mr-4"
-              onClick={() => setShowTopicInfo(!showTopicInfo)}
-            />
-            {showTopicInfo && (
-              <div
-                className="absolute -bottom-24 px-2 py-1 rounded bg-zinc-800 text-sm whitespace-pre-wrap z-11"
-                onClick={() => setShowTopicInfo(false)}
-              >
-                {`복수 주제 선택 시 결정 방식
-투표: 하나를 투표로 확정
-랜덤: 하나를 뽑아 이번 판 고정
-항시 랜덤: 매 라운드마다 무작위 변경`}
-              </div>
-            )}
+
+          <div
+            className="relative flex flex-row
+            items-center space-x-2"
+          >
+            <h2 className={`${titleStyle} mr-4`}>주제</h2>
             <label>{getDisplayTopic(pickedTopic)}</label>
             <div className="absolute right-0">
               <button
-                className="px-3 py-1 mr-1 rounded text bg-zinc-900 hover:bg-zinc-800"
+                className="flex items-center justify-center
+                w-9 h-7 mr-1 rounded-lg
+                text bg-zinc-900 hover:bg-zinc-800"
                 onClick={() => setShowTopicModal(true)}
               >
-                ...
-              </button>
-              <button
-                className="px-3 py-1 mr-1 rounded text bg-zinc-900 hover:bg-zinc-800"
-                onClick={() =>
-                  setDecision(DECISION_LIST[decision].next as DecisionType)
-                }
-              >
-                {DECISION_LIST[decision].label}
+                <Plus size={12} />
               </button>
             </div>
           </div>
 
-          <div className="flex flex-row items-center">
-            <h2 className="font-bold text-lg mr-12">문제 개수</h2>
+          <div className="flex flex-row items-center mb-5">
+            <h2 className={`${titleStyle} mr-12`}>문제 개수</h2>
             <StepSlider />
           </div>
 
-          <div className="flex flex-row items-center mb-5">
-            <h2 className="font-bold text-lg mr-4">공개</h2>
-            <Switch
-              className="data-[state=unchecked]:bg-zinc-600 data-[state=checked]:bg-zinc-800"
-              checked={showPublic}
-              onCheckedChange={setShowPublic}
-            />
-          </div>
-
-          <div className="relative flex flex-row items-center">
-            <h2 className="font-bold text-lg mr-2">점수 획득 기준</h2>
+          <div className="relative flex flex-row items-center mb-5">
+            <h2 className={`${titleStyle} mr-2`}>점수 획득 기준</h2>
             <CircleQuestionMark
               size={17}
               className="mr-4 cursor-pointer"
@@ -278,7 +261,14 @@ export default function RoomModal() {
                 className="absolute -bottom-13 px-2 py-1 rounded bg-zinc-800 text-sm whitespace-pre-wrap z-20"
                 onClick={() => setShowScoreInfo(false)}
               >
-                {`개수: 맞힌 개수\n시간: 시간 비례 점수`}
+                <div className="flex gap-1">
+                  <h2 className="text-zinc-300">개수</h2>
+                  <p>맞힌 개수</p>
+                </div>
+                <div className="flex gap-1">
+                  <h2 className="text-zinc-300">시간</h2>
+                  <p>시간 비례 점수</p>
+                </div>
               </div>
             )}
             <button
@@ -298,11 +288,20 @@ export default function RoomModal() {
               시간
             </button>
           </div>
+
+          <div className="flex flex-row items-center">
+            <h2 className={`${titleStyle} mr-4`}>공개</h2>
+            <Switch
+              className="data-[state=unchecked]:bg-zinc-600 data-[state=checked]:bg-zinc-800"
+              checked={showPublic}
+              onCheckedChange={setShowPublic}
+            />
+          </div>
         </div>
 
-        <div className="flex justify-center mt-6">
+        <div className="flex justify-center">
           <button
-            className={`w-30 py-2 rounded text bg-zinc-900 hover:bg-zinc-800 transition-all ${
+            className={`w-30 py-2 rounded-lg text bg-zinc-900 hover:bg-zinc-800 transition-all ${
               isProcessing ? "cursor-not-allowed opacity-50" : ""
             }`}
             onClick={

@@ -84,11 +84,11 @@ export function StepSlider() {
   };
 
   return (
-    <div className={cn("relative w-[60%] pt-5 pb-7.5")}>
+    <div className={cn("relative w-[60%] mt-3 pb-7.5")}>
       {/* 트랙 영역: 클릭/드래그 이벤트 수신 */}
       <div
         ref={trackRef}
-        className="relative h-1.5 cursor-pointer"
+        className="relative h-1 cursor-pointer"
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
       >
@@ -103,9 +103,9 @@ export function StepSlider() {
 
         {/* Thumb: track 기준 absolute, top 50% + -translate-y-1/2 로 수직 중앙 */}
         <div
-          className="absolute top-1/2 z-10 h-5 w-5
+          className="absolute top-1/2 z-10 h-4 w-4
           -translate-y-1/2 -translate-x-1/2 rounded-full
-          border-2 border-zinc-900 bg-white shadow-sm
+          border-2 border-zinc-900 bg-zinc-300 shadow-sm
           cursor-grab transition-transform hover:scale-110 active:scale-95 active:cursor-grabbing"
           style={{ left: `${getPct(value)}%` }}
         />
@@ -117,7 +117,7 @@ export function StepSlider() {
             key={v}
             className={cn(
               "absolute text-[11px] select-none tabular-nums transition-colors whitespace-nowrap",
-              v === value ? "white" : "text-zinc-700",
+              v === value ? "text-zinc-300" : "text-zinc-700",
             )}
             style={{
               left: `${getPct(v)}%`,

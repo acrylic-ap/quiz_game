@@ -13,11 +13,14 @@ import { Filter, Image, Music, Text } from "lucide-react";
 import { useEffect, useState } from "react";
 import { db } from "@/app/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
+import { DECISION_LIST, DecisionType } from "@/app/atom/lobbyAtom";
+import { decisionAtom } from "@/app/atom/roomModalAtom";
 
 export default function TopicModal() {
   const [showTopicModal, setShowTopicModal] = useAtom(showTopicModalState);
   const [topicList, setTopicList] = useAtom(topicListState);
   const [picked, setPicked] = useAtom(pickedTopicAtom);
+  const [decision, setDecision] = useAtom(decisionAtom);
 
   const [category, setCategory] = useState("all");
 
@@ -112,6 +115,27 @@ export default function TopicModal() {
                 onClick={() => setShowFilter(!showFilter)}
               />
             </div>
+            {/*
+            <button
+              className="px-3 py-1 mr-1 rounded text bg-zinc-900 hover:bg-zinc-800"
+              onClick={() =>
+                setDecision(DECISION_LIST[decision].next as DecisionType)
+              }
+            >
+              {DECISION_LIST[decision].label}
+            </button>
+            <div
+              className="absolute -bottom-24 px-2 py-1
+              rounded bg-zinc-800 text-sm
+              whitespace-pre-wrap z-11"
+              // onClick={() => setShowTopicInfo(false)}
+            >
+              {`복수 주제 선택 시 결정 방식
+투표: 하나를 투표로 확정
+랜덤: 하나를 뽑아 이번 판 고정
+항시 랜덤: 매 라운드마다 무작위 변경`}
+            </div>
+            */}
           </div>
 
           {showFilter && (

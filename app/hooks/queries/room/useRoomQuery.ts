@@ -97,11 +97,11 @@ export const useRoomSubscription = (roomId: string | undefined) => {
           if (topicName) roomTopicMap.set(id, topicName);
         });
 
-        const roomData = {
+        const roomData: Room = {
           id: docSnap.id,
           ...data,
           topicItem: roomTopicMap,
-        };
+        } as Room;
 
         // 5. 🚀 비상 탈출 장치(onDisconnect) 예약
         if (user?.uid) {
@@ -137,7 +137,7 @@ export const useRoomSubscription = (roomId: string | undefined) => {
   const queryResult = useQuery({
     queryKey,
     queryFn: () => {
-      const cachedData = queryClient.getQueryData(queryKey);
+      const cachedData = queryClient.getQueryData<Room>(queryKey);
       // 캐시된 데이터가 없으면 undefined 대신 null을 반환해서 에러를 방지합니다.
       return cachedData ?? null;
     },

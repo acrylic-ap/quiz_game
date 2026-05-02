@@ -62,7 +62,7 @@ export default function RoomCodeModal() {
             id="room-name"
             placeholder="방 코드를 입력하세요"
             className="bg-zinc-900 text-zinc-100
-              rounded-lg pl-3 py-3
+              rounded-lg pl-4 py-3
               outline-none
               placeholder:text-zinc-500"
             value={roomCode}

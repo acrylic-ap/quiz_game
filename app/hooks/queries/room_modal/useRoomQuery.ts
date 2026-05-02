@@ -23,7 +23,7 @@ export const useRoomDetail = (roomId: string | null) => {
         id: docSnap.id,
         roomName: data.roomName || "",
         // Firestore의 객체를 그대로 사용하되, 없을 경우 빈 객체({}) 제공
-        topicItem: data.topicItem || {},
+        topicItem: data.topic || {},
         capacity: data.capacity || 0,
         maxCapacity: data.maxCapacity || 2,
         playing: data.playing || false,
