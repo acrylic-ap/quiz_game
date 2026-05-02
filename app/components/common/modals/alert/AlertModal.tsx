@@ -27,7 +27,7 @@ export default function AlertModal() {
           </DialogTitle>
         </DialogHeader>
 
-        <DialogDescription className="text-xl text-white text-center my-4">
+        <DialogDescription className="text-xl text-white text-center my-4 whitespace-pre-wrap">
           {showAlertModal}
         </DialogDescription>
 

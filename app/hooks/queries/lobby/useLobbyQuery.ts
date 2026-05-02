@@ -38,9 +38,13 @@ export const useRoomList = () => {
       const activeRooms = snapshot.docs.filter(
         (doc) => doc.data().showPublic !== false,
       );
-
       // 삭제된 방 리스너 정리
       const activeIds = activeRooms.map((doc) => doc.id);
+
+      queryClient.setQueryData<LobbyRoom[]>(queryKey, (old = []) => {
+        return old.filter((room) => activeIds.includes(room.id));
+      });
+
       Object.keys(rtdbUnsubscribes).forEach((id) => {
         if (!activeIds.includes(id)) {
           rtdbUnsubscribes[id]();
@@ -105,6 +109,6 @@ export const useRoomList = () => {
   return useQuery<LobbyRoom[]>({
     queryKey,
     queryFn: () => queryClient.getQueryData<LobbyRoom[]>(queryKey) || [],
-    staleTime: Infinity,
+    staleTime: 0,
   });
 };

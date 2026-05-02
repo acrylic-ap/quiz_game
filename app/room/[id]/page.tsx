@@ -10,7 +10,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { useAtom } from "jotai";
 import { useEffect, useState, useRef } from "react";
-import { setRoomModalState } from "@/app/atom/modalAtom";
+import { alertModalState, setRoomModalState } from "@/app/atom/modalAtom";
 import { db, rtdb } from "@/app/lib/firebase";
 import { collection, addDoc, deleteDoc, doc } from "firebase/firestore";
 import { getDisplayTopic } from "@/app/components/common/utils/topic";
@@ -24,12 +24,21 @@ import { useUser } from "@/app/hooks/queries/lobby/useAuth";
 // =========================================================
 
 const Header = () => {
+  const [, setAlertModal] = useAtom(alertModalState);
+
   const router = useRouter();
   const roomId = usePathname().split("/").pop();
 
-  const { data: roomData } = useRoomSubscription(roomId);
+  const { data: roomData, roomStatus } = useRoomSubscription(roomId);
   const { data: users } = useRoomUsers(roomId);
   const { data: user } = useUser();
+
+  useEffect(() => {
+    if (roomStatus == "lost") {
+      setAlertModal("방장이 퇴장하여 방이 삭제됐거나\n접속이 끊어졌습니다.");
+      router.push("/");
+    }
+  }, [roomStatus]);
 
   const handleExit = async () => {
     if (!users || !user) return;
