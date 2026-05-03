@@ -1,22 +1,22 @@
 "use client";
 
 import {
+  Ban,
   Eye,
   EyeClosed,
   Send,
   Settings,
   SquareArrowRightExit,
-  Trash2,
   X,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAtom } from "jotai";
-import { useEffect, useState, useRef, use } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   alertModalState,
-  preventClickState,
   selectModalState,
   setRoomModalState,
+  showBlockedModalState,
 } from "@/app/atom/modalAtom";
 import { db, rtdb } from "@/app/lib/firebase";
 import { collection, addDoc, deleteDoc, doc } from "firebase/firestore";
@@ -27,22 +27,29 @@ import { useMutation } from "@tanstack/react-query";
 import { onValue, ref, remove, set, update } from "firebase/database";
 import { useRoomUsers } from "@/app/hooks/queries/room/useRoomUsers";
 import { useUser } from "@/app/hooks/queries/lobby/useAuth";
+import BlockedModal from "@/app/components/modals/kicked_user_modal/KickedUserModal";
 
 // =========================================================
 
 const Header = () => {
   const [, setAlertModal] = useAtom(alertModalState);
+  const [, setSelectModal] = useAtom(selectModalState);
 
   const router = useRouter();
   const roomId = usePathname().split("/").pop();
 
   const { data: roomData, roomStatus } = useRoomSubscription(roomId);
-  const { data: users, status: usersStatus } = useRoomUsers(roomId);
+  const { data: users } = useRoomUsers(roomId);
   const { data: user } = useUser();
 
   useEffect(() => {
     if (roomStatus == "lost") {
-      setAlertModal("방장이 퇴장하여 방이 삭제됐거나\n접속이 끊어졌습니다.");
+      const isOwner = users?.find((u) => u.id === user?.uid)?.isOwner;
+      setAlertModal(
+        isOwner
+          ? "퇴장하여 방이 삭제되었습니다."
+          : "방장이 퇴장하여 방이 삭제됐거나\n접속이 끊어졌습니다.",
+      );
       router.replace("/");
     }
   }, [roomStatus]);
@@ -75,16 +82,25 @@ const Header = () => {
     if (!roomId || !currentUser) return;
 
     if (currentUser.isOwner) {
-      // 1. RTDB 세션 폭파 (연결된 모든 유저에게 영향)
-      await remove(ref(rtdb, `room_sessions/${roomId}`));
-      // 2. Firestore 방 목록 삭제
-      await deleteDoc(doc(db, "rooms", roomId));
+      setSelectModal({
+        message: "방장이 방을 나가면 방이 삭제됩니다.\n정말 나가시겠습니까?",
+        onConfirm: async () => {
+          // 1. RTDB 세션 폭파 (연결된 모든 유저에게 영향)
+          await remove(ref(rtdb, `room_sessions/${roomId}`));
+          // 2. Firestore 방 목록 삭제
+          await deleteDoc(doc(db, "rooms", roomId));
+
+          router.replace("/");
+
+          setSelectModal(null);
+        },
+      });
     } else {
       // 일반 유저라면 본인 노드만 삭제 (위에서 짠 onDisconnect와 별개로 즉시 실행)
       await remove(ref(rtdb, `room_sessions/${roomId}/users/${user.uid}`));
-    }
 
-    router.replace("/");
+      router.replace("/");
+    }
   };
 
   return (
@@ -169,6 +185,7 @@ const UserList = () => {
   const roomId = usePathname().split("/").pop();
   const { data: roomData } = useRoomSubscription(roomId);
   const [, setSelectModal] = useAtom(selectModalState);
+  const [, setShowBlockedModal] = useAtom(showBlockedModalState);
 
   const { data: users = [] } = useRoomUsers(roomId);
 
@@ -200,15 +217,20 @@ const UserList = () => {
           rounded-lg border border-zinc-800 p-4
           flex flex-col gap-4 shadow-xl"
     >
-      <h2
-        className="flex items-center gap-2
+      <div className="flex items-center justify-between">
+        <h2
+          className="flex items-center gap-2
           text-lg text-zinc-300 font-semibold"
-      >
-        참여자
-        <span className="text-zinc-400">
-          {users?.length}/{roomData?.maxCapacity}
-        </span>
-      </h2>
+        >
+          참여자
+          <span className="text-zinc-400">
+            {users?.length}/{roomData?.maxCapacity}
+          </span>
+        </h2>
+
+        <Ban size="18" color="gray" onClick={() => setShowBlockedModal(true)} />
+      </div>
+
       <div className="flex-1 space-y-3 overflow-y-auto pr-2 no-scrollbar">
         {users.map((user) => (
           <div
@@ -447,6 +469,7 @@ export default function RoomPage() {
     <div className="relative w-full h-screen overflow-hidden bg-zinc-950 font-sans tracking-tight">
       <Header />
       <Section />
+      <BlockedModal />
     </div>
   );
 }

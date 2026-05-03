@@ -42,7 +42,7 @@ export default function SelectModal() {
           <button
             className="w-30 px-5 py-1 rounded
               text-lg outline-none"
-            onClick={showSelectModal?.onCancel}
+            onClick={showSelectModal?.onCancel ?? handleClose}
           >
             취소
           </button>

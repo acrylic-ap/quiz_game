@@ -69,7 +69,8 @@ export const Header = () => {
             <div
               className="absolute w-30 mt-2 pt-2 px-2 right-0
               bg-zinc-800 rounded
-              text-center text-zinc-100"
+              text-center text-zinc-100
+              z-1"
             >
               <UserInfoModal user={user} />
               {dropdownItems.map((item) => (

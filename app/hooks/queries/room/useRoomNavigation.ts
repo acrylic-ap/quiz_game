@@ -2,7 +2,7 @@
 import { LobbyRoom } from "@/app/atom/lobbyAtom";
 import { preventClickState } from "@/app/atom/modalAtom";
 import { rtdb } from "@/app/lib/firebase";
-import { get, onValue, ref, runTransaction } from "firebase/database";
+import { get, onValue, ref, runTransaction, set } from "firebase/database";
 import { useAtom } from "jotai";
 import { useRouter } from "next/navigation";
 
@@ -10,13 +10,19 @@ export const useRoomNavigation = (
   user: any,
   setAlertModal: (msg: string) => void,
 ) => {
-  const [preventClick, setPreventClick] = useAtom(preventClickState);
+  const [, setPreventClick] = useAtom(preventClickState);
 
   const router = useRouter();
 
   const handleEnterRoom = async (room: LobbyRoom | undefined) => {
-    if (!user) return setAlertModal("로그인 후 이용해주세요!");
-    if (!room) return setAlertModal("방 정보를 찾을 수 없습니다.");
+    if (!user) {
+      setPreventClick(false);
+      return setAlertModal("로그인 후 이용해주세요!");
+    }
+    if (!room) {
+      setPreventClick(false);
+      return setAlertModal("방 정보를 찾을 수 없습니다.");
+    }
 
     const roomId = room.id;
 
