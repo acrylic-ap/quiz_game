@@ -6,6 +6,7 @@ import RoomCodeModal from "./components/main/modals/room_code/RoomCodeModal";
 import {
   alertModalState,
   loginModalState,
+  preventClickState,
   setRoomModalState,
 } from "./atom/modalAtom";
 import { useUser } from "./hooks/queries/lobby/useAuth";
@@ -95,12 +96,14 @@ export const Header = () => {
 export const Section = () => {
   const [, setRoomDescription] = useAtom(setRoomModalState);
   const [, setAlertModal] = useAtom(alertModalState);
+  const [, setPreventClick] = useAtom(preventClickState);
   const { data: user } = useUser();
 
   const { data: roomList = [], isPending } = useRoomList();
   const { handleEnterRoom } = useRoomNavigation(user, setAlertModal);
 
   const enterRoom = (room: LobbyRoom) => {
+    setPreventClick(true);
     handleEnterRoom(room);
   };
 
@@ -184,6 +187,10 @@ export const Section = () => {
 };
 
 export default function Home() {
+  const [preventClick] = useAtom(preventClickState);
+
+  if (preventClick) return null;
+
   return (
     <div
       className="w-full h-full

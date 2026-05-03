@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { useAtom } from "jotai";
-import { alertModalState } from "@/app/atom/modalAtom";
+import { alertModalState, preventClickState } from "@/app/atom/modalAtom";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/app/hooks/queries/lobby/useAuth";
 import { useRoomList } from "@/app/hooks/queries/lobby/useLobbyQuery";
@@ -19,6 +19,7 @@ import { useRoomUsers } from "@/app/hooks/queries/room/useRoomUsers";
 export default function RoomCodeModal() {
   const router = useRouter();
   const [, setAlertModal] = useAtom(alertModalState);
+  const [, setPreventClick] = useAtom(preventClickState);
   const [roomCode, setRoomCode] = useState("");
 
   const { data: user } = useUser();
@@ -34,7 +35,12 @@ export default function RoomCodeModal() {
 
     const room = roomList.find((room) => room.id === roomCode);
 
-    if (room) handleEnterRoom(room);
+    if (room) {
+      setPreventClick(true);
+      handleEnterRoom(room);
+    } else {
+      setAlertModal("유효하지 않은 방 코드입니다!");
+    }
   };
 
   return (

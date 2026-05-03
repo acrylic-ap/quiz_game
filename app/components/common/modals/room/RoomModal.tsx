@@ -13,6 +13,7 @@ import { StepSlider } from "./components/Slider";
 import { useAtom } from "jotai";
 import {
   alertModalState,
+  preventClickState,
   setRoomModalState,
   showTopicModalState,
 } from "@/app/atom/modalAtom";
@@ -45,6 +46,7 @@ export default function RoomModal() {
   const [pickedTopic, setPickedTopic] = useAtom(pickedTopicAtom);
   const [internalValue, setInternalValue] = useAtom(internalValueAtom);
   const [decision, setDecision] = useAtom(decisionAtom);
+  const [, setPreventClick] = useAtom(preventClickState);
 
   const { data: room } = useRoomSubscription(roomId);
   const { data: user } = useUser();
@@ -107,6 +109,8 @@ export default function RoomModal() {
       let customId = "";
       let isUnique = false;
 
+      setPreventClick(true);
+
       while (!isUnique) {
         customId = generateRoomId();
         const docRef = doc(db, "rooms", customId);
@@ -143,7 +147,7 @@ export default function RoomModal() {
       });
 
       setRoomDescription(null);
-      router.push(`/room/${customId}`);
+      router.replace(`/room/${customId}`);
     } catch (error: any) {
       console.error("방 생성 에러:", error);
       alert("방 생성 중 오류가 발생했습니다.");

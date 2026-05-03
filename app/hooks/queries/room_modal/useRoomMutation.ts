@@ -47,7 +47,7 @@ export const useRoomMutation = () => {
     },
     onSuccess: (finalId) => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
-      router.push(`/room/${finalId}`);
+      router.replace(`/room/${finalId}`);
     },
   });
 };

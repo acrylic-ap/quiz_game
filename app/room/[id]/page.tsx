@@ -9,15 +9,19 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAtom } from "jotai";
-import { useEffect, useState, useRef } from "react";
-import { alertModalState, setRoomModalState } from "@/app/atom/modalAtom";
+import { useEffect, useState, useRef, use } from "react";
+import {
+  alertModalState,
+  preventClickState,
+  setRoomModalState,
+} from "@/app/atom/modalAtom";
 import { db, rtdb } from "@/app/lib/firebase";
 import { collection, addDoc, deleteDoc, doc } from "firebase/firestore";
 import { getDisplayTopic } from "@/app/components/common/utils/topic";
 import { useRoomSubscription } from "@/app/hooks/queries/room/useRoomQuery";
 import { useChatMessages } from "@/app/hooks/queries/room/useChatQuery";
 import { useMutation } from "@tanstack/react-query";
-import { ref, remove } from "firebase/database";
+import { ref, remove, set, update } from "firebase/database";
 import { useRoomUsers } from "@/app/hooks/queries/room/useRoomUsers";
 import { useUser } from "@/app/hooks/queries/lobby/useAuth";
 
@@ -36,7 +40,7 @@ const Header = () => {
   useEffect(() => {
     if (roomStatus == "lost") {
       setAlertModal("방장이 퇴장하여 방이 삭제됐거나\n접속이 끊어졌습니다.");
-      router.push("/");
+      router.replace("/");
     }
   }, [roomStatus]);
 
@@ -57,7 +61,7 @@ const Header = () => {
       await remove(ref(rtdb, `room_sessions/${roomId}/users/${user.uid}`));
     }
 
-    router.push("/");
+    router.replace("/");
   };
 
   return (
@@ -90,11 +94,25 @@ const Header = () => {
 // ----------------------------------------------------------------
 
 export const RoomInfo = () => {
+  const router = useRouter();
+
   const roomId = usePathname().split("/").pop();
 
   const [, setRoomDescription] = useAtom(setRoomModalState);
+  const [, setAlertModal] = useAtom(alertModalState);
 
   const { data: roomData } = useRoomSubscription(roomId);
+
+  const { data: users = [] } = useRoomUsers(roomId);
+  const { data: user } = useUser();
+
+  // 로그인이 안 돼 있는 경우 퇴실
+  useEffect(() => {
+    if (!user) {
+      setAlertModal("로그인을 하여 방에 입장해 주세요.");
+      router.replace("/");
+    }
+  }, [user]);
 
   return (
     <div
@@ -111,12 +129,14 @@ export const RoomInfo = () => {
       </div>
 
       <div className="h-fit flex">
-        <button onClick={() => setRoomDescription("edit")}>
-          <Settings
-            size={22}
-            className="text-zinc-400 hover:text-zinc-200 transition"
-          />
-        </button>
+        {users.find((u) => u.id === user?.uid)?.isOwner && (
+          <button onClick={() => setRoomDescription("edit")}>
+            <Settings
+              size={22}
+              className="text-zinc-400 hover:text-zinc-200 transition"
+            />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -163,7 +183,7 @@ const UserList = () => {
             {/* 상태 표시 */}
             {!user.isOwner && (
               <div
-                className={`text-sm px-3 py-1 rounded-lg ${user.isReady ? "bg-emerald-950 text-emerald-300" : "bg-zinc-700 text-zinc-400"}`}
+                className={`text-sm px-3 py-1 rounded-lg ${user.isReady ? "bg-indigo-950 text-indigo-300" : "bg-zinc-700 text-zinc-400"}`}
               >
                 {user.isReady ? "준비" : "대기"}
               </div>
@@ -295,6 +315,28 @@ const ChatSection = () => {
 };
 
 const Section = () => {
+  const roomId = usePathname().split("/").pop();
+
+  const { data: users = [] } = useRoomUsers(roomId);
+  const { data: user } = useUser();
+
+  const toggleReadyStatus = () => {
+    if (!users || !user) return;
+
+    const currentUser = users.find((u) => u.id === user.uid);
+    if (!currentUser) return;
+
+    const userRef = ref(rtdb, `room_sessions/${roomId}/users/${user.uid}`);
+    update(userRef, { isReady: !currentUser.isReady });
+  };
+
+  const ready = users.find((u) => u.id === user?.uid)?.isReady;
+  const buttonStyle = `w-48 h-12 rounded-xl
+  text-lg font-bold text-white shadow-lg
+  transition active:scale-95
+  outline-none
+  animate-pulse-slow`;
+
   return (
     <div className="relative w-full h-[calc(100vh-64px)] p-6 md:p-8 flex flex-col gap-6 bg-zinc-950 text-zinc-100">
       <RoomInfo />
@@ -309,15 +351,29 @@ const Section = () => {
       justify-center"
       >
         <div className="flex gap-3">
-          <button
-            className="w-48 h-12 bg-indigo-600 hover:bg-indigo-500 rounded-xl
-            text-lg font-bold text-white shadow-lg
-            shadow-indigo-500/30 transition active:scale-95
-            outline-none
-            animate-pulse-slow"
-          >
-            게임 시작
-          </button>
+          {users.find((u) => u.id === user?.uid)?.isOwner ? (
+            <button
+              className={`${buttonStyle}
+              bg-indigo-600 hover:bg-indigo-500
+              shadow-indigo-500/30`}
+            >
+              게임 시작
+            </button>
+          ) : (
+            <button
+              className={`${buttonStyle}
+            ${
+              ready
+                ? `bg-zinc-700 text-zinc-300 hover:bg-zinc-600
+                shadow-zinc-500/30`
+                : `bg-indigo-600 hover:bg-indigo-500
+                shadow-indigo-500/30`
+            }`}
+              onClick={toggleReadyStatus}
+            >
+              {ready ? "준비 취소" : "준비"}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -325,6 +381,10 @@ const Section = () => {
 };
 
 export default function RoomPage() {
+  const [preventClick, setPreventClick] = useAtom(preventClickState);
+
+  if (preventClick) setPreventClick(false);
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-zinc-950 font-sans tracking-tight">
       <Header />

@@ -56,7 +56,7 @@ export const useRoomNavigation = (
         return setAlertModal("존재하지 않거나 삭제된 방입니다.");
       }
 
-      router.push(`/room/${room.id}`);
+      router.replace(`/room/${room.id}`);
     } catch (error: any) {
       if (error.message === "ALREADY_PLAYING") {
         setAlertModal("이미 진행 중인 방입니다!");
