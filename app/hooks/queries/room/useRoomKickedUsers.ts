@@ -20,7 +20,6 @@ export const useRoomKickedUsers = (roomId: string) => {
 
   // 2. 실시간 리스너 연결 (물리적 실전 로직)
   useEffect(() => {
-    console.log("?");
     if (!roomId) return;
 
     const kickedUsersRef = ref(rtdb, `room_sessions/${roomId}/kicked`);
@@ -28,7 +27,6 @@ export const useRoomKickedUsers = (roomId: string) => {
     // RTDB 값이 바뀔 때마다 TanStack Query 캐시를 강제로 갱신
     const unsubscribe = onValue(kickedUsersRef, (snapshot) => {
       const data = snapshot.val();
-      console.log(data);
       // 데이터가 객체 형태({uid: true})라면 Object.keys 등으로 변환 필요
       const kickedList = data ? Object.keys(data) : [];
       queryClient.setQueryData(queryKey, kickedList);

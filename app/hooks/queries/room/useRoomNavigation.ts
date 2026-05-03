@@ -78,8 +78,6 @@ export const useRoomNavigation = (
         const finalCheck = await get(sessionRef);
         const data = finalCheck.val();
 
-        console.log(data.status);
-
         if (!data) return setAlertModal("이미 삭제된 방입니다.");
         if (data.status == "playing")
           return setAlertModal("이미 진행 중인 방입니다.");

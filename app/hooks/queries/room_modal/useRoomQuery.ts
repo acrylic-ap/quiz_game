@@ -12,8 +12,6 @@ export const useRoomDetail = (roomId: string | null) => {
       const docRef = doc(db, "rooms", roomId);
       const docSnap = await getDoc(docRef);
 
-      console.log(docSnap.exists());
-
       if (!docSnap.exists()) return null;
 
       const data = docSnap.data();

@@ -44,12 +44,7 @@ const Header = () => {
 
   useEffect(() => {
     if (roomStatus == "lost") {
-      const isOwner = users?.find((u) => u.id === user?.uid)?.isOwner;
-      setAlertModal(
-        isOwner
-          ? "퇴장하여 방이 삭제되었습니다."
-          : "방장이 퇴장하여 방이 삭제됐거나\n접속이 끊어졌습니다.",
-      );
+      setAlertModal("방장이 퇴장하여 방이 삭제됐거나\n접속이 끊어졌습니다.");
       router.replace("/");
     }
   }, [roomStatus]);

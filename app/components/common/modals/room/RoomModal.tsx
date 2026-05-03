@@ -123,6 +123,7 @@ export default function RoomModal() {
       await setDoc(doc(db, "rooms", customId), {
         ...payload,
         capacity: 1,
+        ownerId: user.uid,
         createdAt: new Date(),
         playing: false,
       });

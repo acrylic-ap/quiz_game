@@ -11,6 +11,7 @@ import {
 import { Room } from "@/app/atom/lobbyAtom";
 import { useUser } from "../lobby/useAuth";
 import { get, onDisconnect, ref } from "firebase/database";
+import { useRoomUsers } from "./useRoomUsers";
 
 export const useTopicMap = () => {
   return useQuery({
@@ -47,6 +48,7 @@ export const useRoomSubscription = (roomId: string | undefined) => {
   const queryClient = useQueryClient();
   const { data: topicMap } = useTopicMap();
   const { data: user } = useUser();
+  const { data: users } = useRoomUsers(roomId);
   const queryKey = ["room", roomId];
 
   const [roomStatus, setRoomStatus] = useState<"loading" | "exist" | "lost">(
@@ -67,28 +69,32 @@ export const useRoomSubscription = (roomId: string | undefined) => {
     const unsubscribe = onSnapshot(
       roomDocRef,
       async (docSnap) => {
-        // 2. RTDB 세션 존재 여부 확인 (탈주 체크용)
-        const sessionSnap = await get(sessionRef);
         const firestoreExists = docSnap.exists();
-        const rtdbExists = sessionSnap.exists();
 
-        // 🧹 [청소 로직] Firestore에는 있지만 RTDB에 세션이 없다면 '유령 방'
-        if (firestoreExists && !rtdbExists) {
-          console.log("유령 방 감지: Firestore 데이터를 삭제합니다.");
-          await deleteDoc(roomDocRef);
-          setRoomStatus("lost");
-          return;
-        }
-
-        // 3. 방이 아예 존재하지 않는 경우
         if (!firestoreExists) {
           queryClient.setQueryData(queryKey, null);
           setRoomStatus("lost");
           return;
         }
 
-        // 4. 정상적인 방 데이터 가공
         const data = docSnap.data();
+        const ownerId = data.ownerId;
+
+        const ownerSessionRef = ref(
+          rtdb,
+          `room_sessions/${roomId}/users/${ownerId}`,
+        );
+        const ownerSnap = await get(ownerSessionRef);
+        const isOwnerPresent = ownerSnap.exists();
+
+        if (!isOwnerPresent) {
+          console.log("방장 부재 감지: 유령 방을 정리합니다.");
+          await deleteDoc(roomDocRef);
+          // RTDB의 해당 방 세션 전체도 깔끔하게 삭제 (선택 사항)
+          setRoomStatus("lost");
+          return;
+        }
+
         const topics = data.topic ? data.topic.split(", ") : [];
         const roomTopicMap = new Map<string, string>();
 
@@ -130,7 +136,7 @@ export const useRoomSubscription = (roomId: string | undefined) => {
     );
 
     return () => unsubscribe();
-  }, [roomId, topicMap, queryClient, user?.uid]);
+  }, [roomId, topicMap, queryClient, user?.uid, users]);
 
   // TanStack Query와 연동 (이미 정의하신 roomQueries 사용)
   // 여기서는 기본 queryResult만 반환하도록 작성했습니다.
@@ -145,8 +151,8 @@ export const useRoomSubscription = (roomId: string | undefined) => {
     enabled: !!roomId,
     // onSnapshot이 데이터를 실시간으로 넣어주고 있으므로,
     // React Query가 독자적으로 다시 fetch(refetch)하지 않도록 설정
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   return {

@@ -27,6 +27,7 @@ export interface Room {
   decision: DecisionType;
   internalValue: number;
   showPublic: boolean;
+  ownerId?: string;
   rank: "count" | "time";
 }
 
