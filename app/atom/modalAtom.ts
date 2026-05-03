@@ -1,5 +1,13 @@
 import { atom } from "jotai";
 
+interface SelectModalState {
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+export const selectModalState = atom<SelectModalState | null>(null);
+
 export const alertModalState = atom<string | null>(null);
 export const loginModalState = atom(false);
 export const showTopicModalState = atom(false);

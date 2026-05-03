@@ -147,6 +147,9 @@ export default function RoomModal() {
       });
 
       setRoomDescription(null);
+
+      setPreventClick(false);
+
       router.replace(`/room/${customId}`);
     } catch (error: any) {
       console.error("방 생성 에러:", error);

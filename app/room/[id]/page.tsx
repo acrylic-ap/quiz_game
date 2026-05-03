@@ -6,6 +6,8 @@ import {
   Send,
   Settings,
   SquareArrowRightExit,
+  Trash2,
+  X,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAtom } from "jotai";
@@ -13,6 +15,7 @@ import { useEffect, useState, useRef, use } from "react";
 import {
   alertModalState,
   preventClickState,
+  selectModalState,
   setRoomModalState,
 } from "@/app/atom/modalAtom";
 import { db, rtdb } from "@/app/lib/firebase";
@@ -21,7 +24,7 @@ import { getDisplayTopic } from "@/app/components/common/utils/topic";
 import { useRoomSubscription } from "@/app/hooks/queries/room/useRoomQuery";
 import { useChatMessages } from "@/app/hooks/queries/room/useChatQuery";
 import { useMutation } from "@tanstack/react-query";
-import { ref, remove, set, update } from "firebase/database";
+import { onValue, ref, remove, set, update } from "firebase/database";
 import { useRoomUsers } from "@/app/hooks/queries/room/useRoomUsers";
 import { useUser } from "@/app/hooks/queries/lobby/useAuth";
 
@@ -34,7 +37,7 @@ const Header = () => {
   const roomId = usePathname().split("/").pop();
 
   const { data: roomData, roomStatus } = useRoomSubscription(roomId);
-  const { data: users } = useRoomUsers(roomId);
+  const { data: users, status: usersStatus } = useRoomUsers(roomId);
   const { data: user } = useUser();
 
   useEffect(() => {
@@ -43,6 +46,26 @@ const Header = () => {
       router.replace("/");
     }
   }, [roomStatus]);
+
+  useEffect(() => {
+    if (!roomId || !user?.uid) return;
+
+    const kickedRef = ref(rtdb, `room_sessions/${roomId}/kicked/${user.uid}`);
+
+    // 내 UID가 kicked 경로에 추가되는지 실시간 감시
+    const unsubscribe = onValue(kickedRef, (snapshot) => {
+      if (snapshot.exists() && snapshot.val() === true) {
+        // 1. 중복 실행 방지를 위해 리스너 즉시 해제
+        unsubscribe();
+
+        // 2. 알림 및 퇴장 처리
+        setAlertModal("방장에 의해 강제 퇴장당했습니다.");
+        router.replace("/");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [roomId, user?.uid, router, setAlertModal]);
 
   const handleExit = async () => {
     if (!users || !user) return;
@@ -109,7 +132,7 @@ export const RoomInfo = () => {
   // 로그인이 안 돼 있는 경우 퇴실
   useEffect(() => {
     if (!user) {
-      setAlertModal("로그인을 하여 방에 입장해 주세요.");
+      setAlertModal("정상적인 접근이 아닙니다.");
       router.replace("/");
     }
   }, [user]);
@@ -145,8 +168,31 @@ export const RoomInfo = () => {
 const UserList = () => {
   const roomId = usePathname().split("/").pop();
   const { data: roomData } = useRoomSubscription(roomId);
+  const [, setSelectModal] = useAtom(selectModalState);
 
   const { data: users = [] } = useRoomUsers(roomId);
+
+  const { data: me } = useUser();
+
+  const kickUser = (userId: string, nickname: string) => {
+    setSelectModal({
+      message: `${nickname} 님을 강제 퇴장하시겠습니까?`,
+      onConfirm: async () => {
+        // 강제 퇴장 로직 추가
+        set(ref(rtdb, `room_sessions/${roomId}/users/${userId}`), null);
+
+        const kickedRef = ref(rtdb, `room_sessions/${roomId}/kicked`);
+        await update(kickedRef, {
+          [userId]: true, // 유저 ID 자체를 키로 사용
+        });
+
+        setSelectModal(null);
+      },
+      onCancel: () => {
+        setSelectModal(null);
+      },
+    });
+  };
 
   return (
     <div
@@ -179,11 +225,27 @@ const UserList = () => {
                   {user.isOwner && <span className="text-xs">👑</span>}
                 </div>
               </div>
+              {/* 방장인 경우 강제 퇴장 버튼 */}
+              {users.find((u) => u.id === me?.uid)?.isOwner &&
+                !user.isOwner &&
+                user.id && (
+                  <button
+                    className="text-red-500 hover:text-red-400 transition"
+                    onClick={() => kickUser(user.id!, user.nickname)}
+                  >
+                    <X size={18} />
+                  </button>
+                )}
             </div>
             {/* 상태 표시 */}
             {!user.isOwner && (
               <div
-                className={`text-sm px-3 py-1 rounded-lg ${user.isReady ? "bg-indigo-950 text-indigo-300" : "bg-zinc-700 text-zinc-400"}`}
+                className={`text-sm px-3 py-1 rounded-lg
+                ${
+                  user.isReady
+                    ? "bg-indigo-950 text-indigo-300"
+                    : "bg-zinc-700 text-zinc-400"
+                }`}
               >
                 {user.isReady ? "준비" : "대기"}
               </div>
@@ -381,10 +443,6 @@ const Section = () => {
 };
 
 export default function RoomPage() {
-  const [preventClick, setPreventClick] = useAtom(preventClickState);
-
-  if (preventClick) setPreventClick(false);
-
   return (
     <div className="relative w-full h-screen overflow-hidden bg-zinc-950 font-sans tracking-tight">
       <Header />
