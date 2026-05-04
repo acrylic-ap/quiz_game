@@ -42,8 +42,10 @@ const Header = () => {
   const { data: users } = useRoomUsers(roomId);
   const { data: user } = useUser();
 
+  const [wasOwner, setWasOwner] = useState(false);
+
   useEffect(() => {
-    if (roomStatus == "lost") {
+    if (!wasOwner && roomStatus == "lost") {
       setAlertModal("방장이 퇴장하여 방이 삭제됐거나\n접속이 끊어졌습니다.");
       router.replace("/");
     }
@@ -80,6 +82,7 @@ const Header = () => {
       setSelectModal({
         message: "방장이 방을 나가면 방이 삭제됩니다.\n정말 나가시겠습니까?",
         onConfirm: async () => {
+          setWasOwner(true);
           // 1. RTDB 세션 폭파 (연결된 모든 유저에게 영향)
           await remove(ref(rtdb, `room_sessions/${roomId}`));
           // 2. Firestore 방 목록 삭제
