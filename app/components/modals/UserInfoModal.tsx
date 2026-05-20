@@ -11,8 +11,6 @@ import { useState } from "react";
 import { User } from "lucide-react";
 
 export default function UserInfoModal({ user }: any) {
-  const [roomCode, setRoomCode] = useState("");
-
   return (
     <Dialog>
       <DialogTrigger asChild>

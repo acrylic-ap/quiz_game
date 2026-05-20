@@ -1,7 +1,7 @@
 "use client";
 
 import { useAtom } from "jotai";
-import RoomCodeModal from "./components/main/modals/room_code/RoomCodeModal";
+import RoomCodeModal from "./components/modals/RoomCodeModal";
 import {
   alertModalState,
   loginModalState,
@@ -12,7 +12,7 @@ import { useUser } from "./hooks/queries/common/account/useAuth";
 import { useRoomList } from "./hooks/queries/lobby/useLobbyQuery";
 import { useState } from "react";
 import { getAuth, signOut } from "firebase/auth";
-import UserInfoModal from "./components/main/modals/user_info/UserInfoModal";
+import UserInfoModal from "./components/modals/UserInfoModal";
 import { useRoomNavigation } from "./hooks/queries/room/useRoomNavigation";
 import { LobbyRoom } from "./types/common/lobby/room";
 

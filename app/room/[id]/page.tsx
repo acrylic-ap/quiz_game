@@ -26,7 +26,7 @@ import { useMutation } from "@tanstack/react-query";
 import { onValue, ref, remove, set, update } from "firebase/database";
 import { useRoomUsers } from "@/app/hooks/queries/room/useRoomUsers";
 import { useUser } from "@/app/hooks/queries/common/account/useAuth";
-import BlockedModal from "@/app/components/modals/kicked_user_modal/KickedUserModal";
+import BlockedModal from "@/app/components/modals/KickedUserModal";
 import { useGameMutation } from "@/app/hooks/queries/room/useGameMutation";
 import { getDisplayTopic } from "@/app/lib/utils";
 
