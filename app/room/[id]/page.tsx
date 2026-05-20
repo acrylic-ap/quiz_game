@@ -17,17 +17,18 @@ import {
   selectModalState,
   setRoomModalState,
   showBlockedModalState,
-} from "@/app/atom/modalAtom";
+} from "@/app/atoms/modalAtom";
 import { db, rtdb } from "@/app/lib/firebase";
 import { collection, addDoc, deleteDoc, doc } from "firebase/firestore";
-import { getDisplayTopic } from "@/app/components/common/utils/topic";
 import { useRoomSubscription } from "@/app/hooks/queries/room/useRoomQuery";
 import { useChatMessages } from "@/app/hooks/queries/room/useChatQuery";
 import { useMutation } from "@tanstack/react-query";
 import { onValue, ref, remove, set, update } from "firebase/database";
 import { useRoomUsers } from "@/app/hooks/queries/room/useRoomUsers";
-import { useUser } from "@/app/hooks/queries/lobby/useAuth";
+import { useUser } from "@/app/hooks/queries/common/account/useAuth";
 import BlockedModal from "@/app/components/modals/kicked_user_modal/KickedUserModal";
+import { useGameMutation } from "@/app/hooks/queries/room/useGameMutation";
+import { getDisplayTopic } from "@/app/lib/utils";
 
 // =========================================================
 
@@ -162,6 +163,14 @@ export const RoomInfo = () => {
         <span className="text-xl font-bold text-zinc-100">주제</span>
         <label className="text-lg">
           {roomData?.topicItem && getDisplayTopic(roomData?.topicItem)}
+          {` [${roomData?.internalValue === 60 ? "모든 " : roomData?.internalValue}문제, 
+          ${
+            roomData?.decision === "vote"
+              ? "투표"
+              : roomData?.decision === "random"
+                ? "랜덤"
+                : "항시 랜덤"
+          }]`}
         </label>
       </div>
 
@@ -397,10 +406,15 @@ const ChatSection = () => {
 };
 
 const Section = () => {
+  const router = useRouter();
   const roomId = usePathname().split("/").pop();
 
-  const { data: users = [] } = useRoomUsers(roomId);
+  const [, setAlertModal] = useAtom(alertModalState);
+
   const { data: user } = useUser();
+  const { data: users = [] } = useRoomUsers(roomId);
+  const { data: roomData } = useRoomSubscription(roomId);
+  const { startMutation } = useGameMutation(roomId);
 
   const toggleReadyStatus = () => {
     if (!users || !user) return;
@@ -411,6 +425,41 @@ const Section = () => {
     const userRef = ref(rtdb, `room_sessions/${roomId}/users/${user.uid}`);
     update(userRef, { isReady: !currentUser.isReady });
   };
+
+  const handleGameStart = () => {
+    if (!users || !user) return;
+
+    const currentUser = users.find((u) => u.id === user.uid);
+    if (!currentUser || !currentUser.isOwner) return;
+
+    // 방장만 있는지 확인
+    if (users.length <= 1) {
+      setAlertModal("누구랑 경쟁하시려고요?");
+      return;
+    }
+
+    // 모든 유저가 준비 상태인지 확인
+    const allReady = users.every((u) => u.isReady || u.isOwner);
+    if (!allReady) {
+      setAlertModal("너무 급해요!");
+      return;
+    }
+
+    startMutation.mutate(undefined, {
+      onError: (error: any) => {
+        setAlertModal(error.message || "게임 시작에 실패했습니다.");
+      },
+    });
+  };
+
+  useEffect(() => {
+    if (!roomId) return;
+
+    // 게임 시작 감지해서 게임 페이지로 이동(Firestore)
+    if (roomData?.playing) {
+      router.push(`/game/${roomId}`);
+    }
+  }, [roomData?.playing, roomId, router]);
 
   const ready = users.find((u) => u.id === user?.uid)?.isReady;
   const buttonStyle = `w-48 h-12 rounded-xl
@@ -438,6 +487,7 @@ const Section = () => {
               className={`${buttonStyle}
               bg-indigo-600 hover:bg-indigo-500
               shadow-indigo-500/30`}
+              onClick={handleGameStart}
             >
               게임 시작
             </button>

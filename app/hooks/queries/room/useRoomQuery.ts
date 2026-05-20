@@ -8,10 +8,10 @@ import {
   collection,
   deleteDoc,
 } from "firebase/firestore";
-import { Room } from "@/app/atom/lobbyAtom";
-import { useUser } from "../lobby/useAuth";
+import { useUser } from "../common/account/useAuth";
 import { get, onDisconnect, ref } from "firebase/database";
 import { useRoomUsers } from "./useRoomUsers";
+import { Room } from "@/app/types/common/room/room";
 
 export const useTopicMap = () => {
   return useQuery({
@@ -72,6 +72,7 @@ export const useRoomSubscription = (roomId: string | undefined) => {
         const firestoreExists = docSnap.exists();
 
         if (!firestoreExists) {
+          console.log("");
           queryClient.setQueryData(queryKey, null);
           setRoomStatus("lost");
           return;
@@ -79,20 +80,23 @@ export const useRoomSubscription = (roomId: string | undefined) => {
 
         const data = docSnap.data();
         const ownerId = data.ownerId;
+        const isPlaying = data.status === "playing";
 
-        const ownerSessionRef = ref(
-          rtdb,
-          `room_sessions/${roomId}/users/${ownerId}`,
-        );
-        const ownerSnap = await get(ownerSessionRef);
-        const isOwnerPresent = ownerSnap.exists();
+        if (!isPlaying) {
+          const ownerSessionRef = ref(
+            rtdb,
+            `room_sessions/${roomId}/users/${ownerId}`,
+          );
+          const ownerSnap = await get(ownerSessionRef);
+          const isOwnerPresent = ownerSnap.exists();
 
-        if (!isOwnerPresent) {
-          console.log("방장 부재 감지: 유령 방을 정리합니다.");
-          await deleteDoc(roomDocRef);
-          // RTDB의 해당 방 세션 전체도 깔끔하게 삭제 (선택 사항)
-          setRoomStatus("lost");
-          return;
+          if (!isOwnerPresent) {
+            console.log("방장 부재 감지: 유령 방을 정리합니다.");
+            await deleteDoc(roomDocRef);
+            // RTDB의 해당 방 세션 전체도 깔끔하게 삭제 (선택 사항)
+            setRoomStatus("lost");
+            return;
+          }
         }
 
         const topics = data.topic ? data.topic.split(", ") : [];
@@ -116,12 +120,23 @@ export const useRoomSubscription = (roomId: string | undefined) => {
             `room_sessions/${roomId}/users/${user.uid}`,
           );
 
-          if (data.ownerId === user.uid) {
-            // 방장인 경우: 연결 끊기면 방 세션 전체 삭제
-            onDisconnect(sessionRef).remove().catch(console.error);
+          if (isPlaying) {
+            // ✅ 게임 시작됨: 기존에 예약된 onDisconnect를 '취소'합니다.
+            // cancel()을 호출하면 브라우저를 닫아도 삭제 로직이 실행되지 않습니다.
+            onDisconnect(sessionRef)
+              .cancel()
+              .catch(() => {});
+            onDisconnect(myEntryRef)
+              .cancel()
+              .catch(() => {});
+            console.log("게임 중: 비상 탈출 장치를 해제합니다.");
           } else {
-            // 일반 유저인 경우: 연결 끊기면 내 정보만 삭제
-            onDisconnect(myEntryRef).remove().catch(console.error);
+            // ✅ 대기 중: 평상시처럼 탈출 장치 예약
+            if (ownerId === user.uid) {
+              onDisconnect(sessionRef).remove().catch(console.error);
+            } else {
+              onDisconnect(myEntryRef).remove().catch(console.error);
+            }
           }
         }
 

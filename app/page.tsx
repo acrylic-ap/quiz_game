@@ -1,20 +1,20 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { LobbyRoom } from "@/app/atom/lobbyAtom";
 import RoomCodeModal from "./components/main/modals/room_code/RoomCodeModal";
 import {
   alertModalState,
   loginModalState,
   preventClickState,
   setRoomModalState,
-} from "./atom/modalAtom";
-import { useUser } from "./hooks/queries/lobby/useAuth";
+} from "./atoms/modalAtom";
+import { useUser } from "./hooks/queries/common/account/useAuth";
 import { useRoomList } from "./hooks/queries/lobby/useLobbyQuery";
 import { useState } from "react";
 import { getAuth, signOut } from "firebase/auth";
 import UserInfoModal from "./components/main/modals/user_info/UserInfoModal";
 import { useRoomNavigation } from "./hooks/queries/room/useRoomNavigation";
+import { LobbyRoom } from "./types/common/lobby/room";
 
 export const Header = () => {
   const [, setShowLoginModal] = useAtom(loginModalState);

@@ -1,7 +1,7 @@
 // @/app/hooks/useRoomNavigation.ts
-import { LobbyRoom } from "@/app/atom/lobbyAtom";
-import { preventClickState } from "@/app/atom/modalAtom";
+import { preventClickState } from "@/app/atoms/modalAtom";
 import { rtdb } from "@/app/lib/firebase";
+import { LobbyRoom } from "@/app/types/common/lobby/room";
 import { get, onValue, ref, runTransaction, set } from "firebase/database";
 import { useAtom } from "jotai";
 import { useRouter } from "next/navigation";

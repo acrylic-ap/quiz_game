@@ -1,9 +1,9 @@
-import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
 import { db, rtdb } from "@/app/lib/firebase";
 import { collection, getDocs, onSnapshot } from "firebase/firestore";
-import { LobbyRoom } from "@/app/atom/lobbyAtom";
 import { onValue, ref, Unsubscribe } from "firebase/database";
+import { LobbyRoom } from "@/app/types/common/lobby/room";
 
 // 1. 토픽 매핑 데이터 가져오기 (정적)
 export const useTopicMap = () => {
