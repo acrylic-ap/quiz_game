@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ref, onValue } from "firebase/database";
 import { rtdb } from "@/app/lib/firebase";
 
-export const useRoomKickedUsers = (roomId: string) => {
+export const useRoomKickedList = (roomId: string) => {
   const queryClient = useQueryClient();
   const queryKey = ["roomKickedUsers", roomId];
 

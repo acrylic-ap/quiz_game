@@ -36,6 +36,10 @@ export default function AlertModal() {
             className="w-30 px-5 py-1 rounded
               text-lg outline-none"
             onClick={() => setShowAlertModal(null)}
+            onKeyDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
             확인
           </button>

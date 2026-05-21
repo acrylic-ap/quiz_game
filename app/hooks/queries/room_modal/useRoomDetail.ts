@@ -16,11 +16,9 @@ export const useRoomDetail = (roomId: string | null) => {
 
       const data = docSnap.data();
 
-      // ✅ Record<string, string> 규격을 그대로 유지하여 반환
       return {
         id: docSnap.id,
         roomName: data.roomName || "",
-        // Firestore의 객체를 그대로 사용하되, 없을 경우 빈 객체({}) 제공
         topicItem: data.topic || {},
         capacity: data.capacity || 0,
         maxCapacity: data.maxCapacity || 2,

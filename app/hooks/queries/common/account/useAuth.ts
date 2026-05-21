@@ -4,7 +4,7 @@ import { getAuth } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 
-export const useUser = () => {
+export const useAuth = () => {
   const queryClient = useQueryClient();
   const queryKey = ["user"];
 

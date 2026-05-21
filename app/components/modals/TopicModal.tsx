@@ -1,7 +1,7 @@
 "use client";
 
 import { showTopicModalState } from "@/app/atoms/modalAtom";
-import { pickedTopicAtom, topicListState } from "@/app/atoms/topicAtom";
+import { pickedTopicAtom } from "@/app/atoms/topicAtom";
 import {
   Dialog,
   DialogContent,
@@ -10,46 +10,29 @@ import {
 } from "@/components/ui/dialog";
 import { useAtom } from "jotai";
 import { Filter, Image, Music, Text } from "lucide-react";
-import { useEffect, useState } from "react";
-import { db } from "@/app/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
-import { Topic } from "@/app/types/common/room/topic";
+import { useState } from "react";
+import { useTopicQuery } from "@/app/hooks/queries/room_modal/useTopicQuery";
+import {
+  TOPIC_DECISION_LIST,
+  TopicDecisionType,
+} from "@/app/types/common/room/topicDecision";
 
 export default function TopicModal() {
   const [showTopicModal, setShowTopicModal] = useAtom(showTopicModalState);
-  const [topicList, setTopicList] = useAtom(topicListState);
   const [picked, setPicked] = useAtom(pickedTopicAtom);
 
-  const [category, setCategory] = useState("all");
+  const { data: topicList = [] } = useTopicQuery();
 
   const [showTypeImage, setShowTypeImage] = useState(true);
   const [showTypeArticle, setShowTypeArticle] = useState(true);
   const [showTypeSound, setShowTypeSound] = useState(true);
   const [showFilter, setShowFilter] = useState(false);
 
+  const [category, setCategory] = useState("all");
   const [topicName, setTopicName] = useState("");
 
-  useEffect(() => {
-    const fetchTopicList = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "topics"));
-        const topics: Topic[] = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          type: doc.data().type as string,
-          questionType: doc.data().questionType as "select" | "input",
-          topicName: doc.data().topicName as string,
-          description: doc.data().description as string,
-          category: doc.data().category as string,
-        }));
-
-        setTopicList(topics);
-      } catch (error) {
-        console.error("Error fetching topic list:", error);
-      }
-    };
-
-    fetchTopicList();
-  }, []);
+  const [decision, setDecision] = useState<TopicDecisionType>("vote");
+  const [showTopicInfo, setShowTopicInfo] = useState(false);
 
   const handleTopicNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTopicName(e.target.value);
@@ -113,27 +96,29 @@ export default function TopicModal() {
                 onClick={() => setShowFilter(!showFilter)}
               />
             </div>
-            {/*
             <button
               className="px-3 py-1 mr-1 rounded text bg-zinc-900 hover:bg-zinc-800"
               onClick={() =>
-                setDecision(DECISION_LIST[decision].next as DecisionType)
+                setDecision(
+                  TOPIC_DECISION_LIST[decision].next as TopicDecisionType,
+                )
               }
             >
-              {DECISION_LIST[decision].label}
+              {TOPIC_DECISION_LIST[decision].label}
             </button>
-            <div
-              className="absolute -bottom-24 px-2 py-1
+            {showTopicInfo && (
+              <div
+                className="absolute -bottom-24 px-2 py-1
               rounded bg-zinc-800 text-sm
               whitespace-pre-wrap z-11"
-              // onClick={() => setShowTopicInfo(false)}
-            >
-              {`복수 주제 선택 시 결정 방식
+                onClick={() => setShowTopicInfo(false)}
+              >
+                {`복수 주제 선택 시 결정 방식
 투표: 하나를 투표로 확정
 랜덤: 하나를 뽑아 이번 판 고정
 항시 랜덤: 매 라운드마다 무작위 변경`}
-            </div>
-            */}
+              </div>
+            )}
           </div>
 
           {showFilter && (

@@ -8,7 +8,7 @@ import { LobbyRoom } from "@/app/types/common/lobby/room";
 // 1. 토픽 매핑 데이터 가져오기 (정적)
 export const useTopicMap = () => {
   return useQuery({
-    queryKey: ["topics"],
+    queryKey: ["topicMap"],
     queryFn: async () => {
       const querySnapshot = await getDocs(collection(db, "topics"));
       const mapping: Record<string, string> = {};
@@ -83,7 +83,7 @@ export const useRoomList = () => {
             roomName: data.roomName,
             maxCapacity: data.maxCapacity,
             internalValue: data.internalValue,
-            capacity, // RTDB에서 실시간으로 받아온 인원
+            capacity,
           };
 
           // 3. 캐시 업데이트: 해당 방 정보만 교체 (참조값을 바꿔서 UI 갱신 유도)

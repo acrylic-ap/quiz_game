@@ -21,6 +21,10 @@ export default function LoginModal() {
       onSuccess: () => {
         setShowLoginModal(false);
       },
+      onError: (error) => {
+        console.error("로그인 실패:", error);
+        // 알림 창을 띄우거나 에러 메시지 상태를 업데이트하세요.
+      },
     });
   };
 

@@ -9,33 +9,23 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { CircleQuestionMark, Plus, User } from "lucide-react";
 import { useEffect, useState } from "react";
-import { StepSlider } from "./Slider";
-import { useAtom } from "jotai";
+import { StepSlider } from "./_components/Slider";
+import { useAtom, useAtomValue } from "jotai";
 import {
   alertModalState,
-  preventClickState,
   setRoomModalState,
   showTopicModalState,
 } from "@/app/atoms/modalAtom";
 import { pickedTopicAtom } from "@/app/atoms/topicAtom";
 import { topicDecisionAtom, questionCountAtom } from "@/app/atoms/roomFormAtom";
-import { db, rtdb } from "@/app/lib/firebase";
-import {
-  getDoc,
-  doc,
-  setDoc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { ref, set, update } from "firebase/database";
-import { usePathname, useRouter } from "next/navigation";
-import { generateRoomId, getDisplayTopic } from "@/app/lib/utils";
-import { useRoomSubscription } from "@/app/hooks/queries/room/useRoomQuery";
-import { useUser } from "@/app/hooks/queries/common/account/useAuth";
+import { getDisplayTopic } from "@/app/lib/utils";
+import { useRoomSubscription } from "@/app/hooks/queries/room/queries/useRoomQuery";
+import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
+import { currentRoomIdAtom } from "@/app/atoms/roomAtom";
+import { useRoomMutation } from "@/app/hooks/queries/room_modal/useRoomMutation";
 
 export default function RoomModal() {
-  const router = useRouter();
-  const roomId = usePathname().split("/").pop();
+  const roomId = useAtomValue(currentRoomIdAtom);
 
   // Atoms
   const [roomDescription, setRoomDescription] = useAtom(setRoomModalState);
@@ -44,11 +34,11 @@ export default function RoomModal() {
   const [pickedTopic, setPickedTopic] = useAtom(pickedTopicAtom);
   const [internalValue, setInternalValue] = useAtom(questionCountAtom);
   const [decision, setDecision] = useAtom(topicDecisionAtom);
-  const [, setPreventClick] = useAtom(preventClickState);
 
   // React Queries
   const { data: room } = useRoomSubscription(roomId);
-  const { data: user } = useUser();
+  const { data: user } = useAuth();
+  const { createRoom, updateRoom } = useRoomMutation();
 
   // Local States
   const [roomName, setRoomName] = useState("");
@@ -56,7 +46,6 @@ export default function RoomModal() {
   const [rank, setRank] = useState<"count" | "time">("count");
   const [showPublic, setShowPublic] = useState(true);
   const [showScoreInfo, setShowScoreInfo] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   // 수정 모드일 때 기존 데이터 세팅
   useEffect(() => {
@@ -100,92 +89,22 @@ export default function RoomModal() {
     updatedAt: new Date(),
   });
 
-  const handleCreateRoom = async () => {
-    if (isProcessing || !isRoomValid() || !user) return;
-    setIsProcessing(true);
-
-    try {
-      let customId = "";
-      let isUnique = false;
-
-      setPreventClick(true);
-
-      while (!isUnique) {
-        customId = generateRoomId();
-        const docRef = doc(db, "rooms", customId);
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) isUnique = true;
-      }
-
-      // 1. Firestore 방 생성
-      const payload = getRoomPayload();
-      await setDoc(doc(db, "rooms", customId), {
-        ...payload,
-        capacity: 1,
-        ownerId: user.uid,
-        createdAt: new Date(),
-        playing: false,
-      });
-
-      // 2. RTDB 실시간 세션 생성 (추가됨)
-      await set(ref(rtdb, `room_sessions/${customId}`), {
-        status: "waiting",
-        currentRound: 0,
-        config: {
-          roomName: payload.roomName,
-          maxCapacity: payload.maxCapacity,
-          rank: payload.rank,
-        },
-        users: {
-          [user?.uid]: {
-            nickname: user.nickname,
-            isOwner: true,
-            jointedAt: serverTimestamp(),
-          },
-        }, // 입장 시 여기에 push
-        messages: {}, // 채팅 노드
-      });
-
-      setRoomDescription(null);
-
-      setPreventClick(false);
-
-      router.replace(`/room/${customId}`);
-    } catch (error: any) {
-      console.error("방 생성 에러:", error);
-      alert("방 생성 중 오류가 발생했습니다.");
-    } finally {
-      setIsProcessing(false);
-    }
+  const handleCreateRoom = () => {
+    if (!isRoomValid() || !user) return;
+    createRoom.mutate(getRoomPayload(), {
+      onSuccess: () => setRoomDescription(null),
+    });
   };
 
-  const handleUpdateRoom = async () => {
-    if (isProcessing || !isRoomValid() || !room?.id) return;
-    setIsProcessing(true);
-
-    try {
-      const payload = getRoomPayload();
-
-      // 1. Firestore 수정
-      const docRef = doc(db, "rooms", room.id);
-      await updateDoc(docRef, payload);
-
-      // 2. RTDB 설정 동기화 (추가됨)
-      await update(ref(rtdb, `room_sessions/${room.id}/config`), {
-        roomName: payload.roomName,
-        maxCapacity: payload.maxCapacity,
-        rank: payload.rank,
-      });
-
-      setRoomDescription(null);
-    } catch (error) {
-      console.error("방 수정 에러:", error);
-      alert("방 정보를 수정하는데 실패했습니다.");
-    } finally {
-      setIsProcessing(false);
-    }
+  const handleUpdateRoom = () => {
+    if (!isRoomValid() || !room?.id) return;
+    updateRoom.mutate(
+      { roomId: room.id, data: getRoomPayload() },
+      { onSuccess: () => setRoomDescription(null) },
+    );
   };
 
+  const isProcessing = createRoom.isPending || updateRoom.isPending;
   const isOpen = !!roomDescription;
 
   const titleStyle = `text-zinc-300 font-bold text-lg`;

@@ -3,15 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ref, onValue, off } from "firebase/database";
 import { rtdb } from "@/app/lib/firebase";
 import { useEffect, useMemo } from "react";
-
-interface RoomUser {
-  id: string;
-  nickname: string;
-  isOwner: boolean;
-  isReady: boolean;
-  joinedAt: number | object;
-  avatar?: string;
-}
+import { RoomUser } from "@/app/types/common/room/user";
 
 export const useRoomUsers = (roomId: string | undefined) => {
   const queryClient = useQueryClient();
@@ -22,7 +14,7 @@ export const useRoomUsers = (roomId: string | undefined) => {
 
     const usersRef = ref(rtdb, `room_sessions/${roomId}/users`);
 
-    const unsubscribe = onValue(usersRef, (snapshot) => {
+    onValue(usersRef, (snapshot) => {
       const data = snapshot.val();
       const userList: RoomUser[] = data
         ? Object.entries(data).map(([uid, info]: [string, any]) => ({

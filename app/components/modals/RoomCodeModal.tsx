@@ -10,19 +10,16 @@ import {
 import { useState } from "react";
 import { useAtom } from "jotai";
 import { alertModalState, preventClickState } from "@/app/atoms/modalAtom";
-import { useRouter } from "next/navigation";
-import { useUser } from "@/app/hooks/queries/common/account/useAuth";
+import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
 import { useRoomList } from "@/app/hooks/queries/lobby/useLobbyQuery";
-import { useRoomNavigation } from "@/app/hooks/queries/room/useRoomNavigation";
-import { useRoomUsers } from "@/app/hooks/queries/room/useRoomUsers";
+import { useRoomNavigation } from "@/app/hooks/queries/room/actions/useRoomNavigation";
 
 export default function RoomCodeModal() {
-  const router = useRouter();
   const [, setAlertModal] = useAtom(alertModalState);
   const [, setPreventClick] = useAtom(preventClickState);
   const [roomCode, setRoomCode] = useState("");
 
-  const { data: user } = useUser();
+  const { data: user } = useAuth();
   const { data: roomList = [] } = useRoomList();
   const { handleEnterRoom } = useRoomNavigation(user, setAlertModal);
 
@@ -31,9 +28,13 @@ export default function RoomCodeModal() {
   };
 
   const enterCodeRoom = () => {
-    if (!roomCode) return setAlertModal("코드를 입력해주세요!");
+    const cleanRoomCode = roomCode.replace(/\s/g, "");
 
-    const room = roomList.find((room) => room.id === roomCode);
+    if (!roomCode) {
+      return setAlertModal("코드를 입력해주세요!");
+    }
+
+    const room = roomList.find((room) => room.id === cleanRoomCode);
 
     if (room) {
       setPreventClick(true);
@@ -73,8 +74,12 @@ export default function RoomCodeModal() {
               placeholder:text-zinc-500"
             value={roomCode}
             onChange={handleRoomCodeChange}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") enterCodeRoom();
+            onKeyDown={(e: React.KeyboardEvent) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+                enterCodeRoom();
+              }
             }}
           />
         </div>

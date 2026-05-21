@@ -8,7 +8,7 @@ import {
   collection,
   deleteDoc,
 } from "firebase/firestore";
-import { useUser } from "../common/account/useAuth";
+import { useAuth } from "../../common/account/useAuth";
 import { get, onDisconnect, ref } from "firebase/database";
 import { useRoomUsers } from "./useRoomUsers";
 import { Room } from "@/app/types/common/room/room";
@@ -47,7 +47,7 @@ export const roomQueries = {
 export const useRoomSubscription = (roomId: string | undefined) => {
   const queryClient = useQueryClient();
   const { data: topicMap } = useTopicMap();
-  const { data: user } = useUser();
+  const { data: user } = useAuth();
   const { data: users } = useRoomUsers(roomId);
   const queryKey = ["room", roomId];
 
@@ -72,7 +72,6 @@ export const useRoomSubscription = (roomId: string | undefined) => {
         const firestoreExists = docSnap.exists();
 
         if (!firestoreExists) {
-          console.log("");
           queryClient.setQueryData(queryKey, null);
           setRoomStatus("lost");
           return;

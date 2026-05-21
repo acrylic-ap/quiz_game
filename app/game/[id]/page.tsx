@@ -4,16 +4,15 @@ import { useMemo, useState } from "react";
 import {
   Trophy,
   Clock3,
-  CheckCircle2,
   Crown,
   ChevronRight,
   Users,
   RotateCcw,
   DoorOpen,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
-import { useRoomUsers } from "@/app/hooks/queries/room/useRoomUsers";
-import { useRoomSubscription } from "@/app/hooks/queries/room/useRoomQuery";
+import { useParams } from "next/navigation";
+import { useRoomUsers } from "@/app/hooks/queries/room/queries/useRoomUsers";
+import { useRoomSubscription } from "@/app/hooks/queries/room/queries/useRoomQuery";
 
 const players = [
   { name: "Minho", score: 1800, correct: true },
@@ -27,7 +26,8 @@ const categories = ["게임", "애니", "영화", "과학", "스포츠", "음악
 const answers = ["피카츄", "라이츄", "파이리", "꼬부기"];
 
 const Header = () => {
-  const roomId = usePathname().split("/").pop();
+  const params = useParams();
+  const roomId = params?.roomId as string;
 
   const { data: roomData } = useRoomSubscription(roomId);
 
@@ -194,7 +194,8 @@ const QuestionSection = () => {
 };
 
 const RankingSection = () => {
-  const roomId = usePathname().split("/").pop();
+  const params = useParams();
+  const roomId = params?.roomId as string;
 
   const sortedPlayers = useMemo(
     () => [...players].sort((a, b) => b.score - a.score),
