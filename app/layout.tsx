@@ -24,10 +24,7 @@ export default function RootLayout({
       className={cn("font-sans", inter.variable)}
       suppressHydrationWarning
     >
-      <body
-        className="w-full h-full bg-black
-                  flex flex-col text-white"
-      >
+      <body className="w-full bg-background flex flex-col text-foreground">
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"

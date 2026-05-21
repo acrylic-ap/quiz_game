@@ -2,7 +2,7 @@
 
 import { alertModalState, loginModalState } from "@/app/atoms/modalAtom";
 import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
-import { useAtom, useSetAtom } from "jotai";
+import { useSetAtom } from "jotai";
 import UserInfoDropdown from "./UserInfoDropdown";
 import { useLogout } from "../hooks/queries/common/account/useLogout";
 

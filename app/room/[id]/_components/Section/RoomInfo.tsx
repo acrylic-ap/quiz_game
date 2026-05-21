@@ -61,7 +61,7 @@ export const RoomInfo = () => {
           <button onClick={() => setRoomDescription("edit")}>
             <Settings
               size={22}
-              className="text-zinc-400 hover:text-zinc-200 transition"
+              className="text-zinc-400 hover:text-zinc-100 transition"
             />
           </button>
         )}

@@ -10,12 +10,20 @@ import {
 } from "@/components/ui/dialog";
 import { useAtom } from "jotai";
 import { Filter, Image, Music, Text } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTopicQuery } from "@/app/hooks/queries/room_modal/useTopicQuery";
 import {
   TOPIC_DECISION_LIST,
   TopicDecisionType,
 } from "@/app/types/common/room/topicDecision";
+import { Button } from "@/components/ui/button";
+import {
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Select,
+} from "@/components/ui/select";
 
 export default function TopicModal() {
   const [showTopicModal, setShowTopicModal] = useAtom(showTopicModalState);
@@ -33,6 +41,25 @@ export default function TopicModal() {
 
   const [decision, setDecision] = useState<TopicDecisionType>("vote");
   const [showTopicInfo, setShowTopicInfo] = useState(false);
+
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = () => {
+    // 500ms(0.5초) 뒤에 띄우기
+    timerRef.current = setTimeout(() => {
+      setShowTopicInfo(true);
+    }, 500);
+  };
+
+  const handleMouseLeave = () => {
+    // 타이머가 작동 중이면 즉시 취소
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    // 툴팁 끄기
+    setShowTopicInfo(false);
+  };
 
   const handleTopicNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTopicName(e.target.value);
@@ -70,7 +97,7 @@ export default function TopicModal() {
     <Dialog open={showTopicModal} onOpenChange={setShowTopicModal}>
       <DialogContent className="bg-zinc-950 text-zinc-100 select-none">
         <DialogHeader className="text-center mt-5">
-          <DialogTitle className="text-2xl text-zinc-200">주제</DialogTitle>
+          <DialogTitle className="text-2xl text-zinc-100">주제</DialogTitle>
         </DialogHeader>
 
         <div>
@@ -96,29 +123,6 @@ export default function TopicModal() {
                 onClick={() => setShowFilter(!showFilter)}
               />
             </div>
-            <button
-              className="px-3 py-1 mr-1 rounded text bg-zinc-900 hover:bg-zinc-800"
-              onClick={() =>
-                setDecision(
-                  TOPIC_DECISION_LIST[decision].next as TopicDecisionType,
-                )
-              }
-            >
-              {TOPIC_DECISION_LIST[decision].label}
-            </button>
-            {showTopicInfo && (
-              <div
-                className="absolute -bottom-24 px-2 py-1
-              rounded bg-zinc-800 text-sm
-              whitespace-pre-wrap z-11"
-                onClick={() => setShowTopicInfo(false)}
-              >
-                {`복수 주제 선택 시 결정 방식
-투표: 하나를 투표로 확정
-랜덤: 하나를 뽑아 이번 판 고정
-항시 랜덤: 매 라운드마다 무작위 변경`}
-              </div>
-            )}
           </div>
 
           {showFilter && (
@@ -126,15 +130,19 @@ export default function TopicModal() {
               className={`w-full h-10 bg-zinc-900 flex flex-row items-center
           ${showFilter ? "rounded-b" : "rounded"}`}
             >
-              <select
-                onChange={(e) => setCategory(e.target.value)}
+              <Select
                 value={category}
-                className="ml-2 outline-none bg-zinc-900"
+                onValueChange={(value) => setCategory(value)}
               >
-                <option value="all">분류</option>
-                <option value="국어">국어</option>
-                <option value="노래">노래</option>
-              </select>
+                <SelectTrigger className="ml-2 outline-none bg-zinc-900 border-none">
+                  <SelectValue placeholder="분류" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">분류</SelectItem>
+                  <SelectItem value="국어">국어</SelectItem>
+                  <SelectItem value="노래">노래</SelectItem>
+                </SelectContent>
+              </Select>
               <button
                 className="ml-3"
                 onClick={() => setShowTypeImage(!showTypeImage)}
@@ -166,11 +174,56 @@ export default function TopicModal() {
           )}
         </div>
 
+        {picked.size > 1 && (
+          <div className="flex items-center relative">
+            <h2
+              className="text mr-2"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              결정 방식
+            </h2>
+
+            <Select
+              value={decision}
+              onValueChange={(value: TopicDecisionType) => setDecision(value)}
+            >
+              <SelectTrigger className="px-3 py-1 mr-1">
+                <SelectValue placeholder="분류" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(TOPIC_DECISION_LIST).map(([key, decision]) => (
+                  <SelectItem key={key} value={key}>
+                    {(decision as any).label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {showTopicInfo && (
+              <div className="absolute -bottom-18 px-2 py-1 border border-zinc-700 rounded bg-zinc-900 text-sm whitespace-pre-wrap z-11">
+                <div className="flex gap-1">
+                  <h3 className="text-zinc-300">투표</h3>
+                  <p>하나를 투표로 확정</p>
+                </div>
+                <div className="flex gap-1">
+                  <h3 className="text-zinc-300">랜덤</h3>
+                  <p>하나를 뽑아 이번 판 고정</p>
+                </div>
+                <div className="flex gap-1">
+                  <h3 className="text-zinc-300">항시 랜덤</h3>
+                  <p>매 라운드마다 무작위 변경</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div
           className="grid grid-cols-2
         w-full h-[200px]
         overflow-y-auto overflow-x-none
-        no-scrollbar"
+        no-scrollbar gap-3"
         >
           {filteredTopicList.length ? (
             filteredTopicList.map((room) => (
@@ -178,8 +231,10 @@ export default function TopicModal() {
                 role="button"
                 className={`relative h-full py-4
                       flex flex-col 
+                      border-zinc-700
                       hover:bg-zinc-900
-                      ${picked.has(room.id) ? "bg-zinc-800" : "bg-zinc-950"}`}
+                      border rounded-md
+                      ${picked.has(room.id) ? "bg-zinc-900" : "bg-zinc-950"}`}
                 key={room.id}
                 onClick={() => chooseTopic(room.id, room.topicName)}
               >
@@ -214,15 +269,13 @@ export default function TopicModal() {
         </div>
 
         <div className="flex justify-center">
-          <button
-            className="w-30 px-6 py-2 rounded
-              text bg-zinc-900
-              hover:bg-zinc-800
-              font-semibold"
+          <Button
+            variant="secondary"
+            className="w-30 rounded-lg"
             onClick={() => setShowTopicModal(false)}
           >
             선택
-          </button>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

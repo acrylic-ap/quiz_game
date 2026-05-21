@@ -3,6 +3,8 @@ import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
 import { useSendMessage } from "@/app/hooks/queries/room/actions/useSendMessage";
 import { useChatMessages } from "@/app/hooks/queries/room/queries/useChatQuery";
 import { useRoomUsers } from "@/app/hooks/queries/room/queries/useRoomUsers";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useAtomValue } from "jotai";
 import { Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -65,7 +67,7 @@ export const ChatSection = () => {
             >
               {msg.username !== "시스템" && (
                 <div className="flex items-baseline gap-2 mb-1">
-                  <span className="font-semibold text-zinc-200">
+                  <span className="font-semibold text-zinc-100">
                     {msg.username}
                   </span>
                   <span className="text-xs text-zinc-600">{msg.time}</span>

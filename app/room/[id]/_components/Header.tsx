@@ -37,7 +37,7 @@ export const Header = () => {
     px-6 shadow-lg shadow-black/20"
     >
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold text-zinc-50 tracking-tight">
+        <h1 className="text-2xl font-bold tracking-tight">
           <span className="text-indigo-400">{roomId}</span> {roomData?.roomName}
         </h1>
       </div>

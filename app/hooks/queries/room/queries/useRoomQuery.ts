@@ -15,7 +15,7 @@ import { Room } from "@/app/types/common/room/room";
 
 export const useTopicMap = () => {
   return useQuery({
-    queryKey: ["topics"],
+    queryKey: ["topicMap"],
     queryFn: async () => {
       const querySnapshot = await getDocs(collection(db, "topics"));
       const mapping: Record<string, string> = {}; // ✅ Map 대신 일반 객체

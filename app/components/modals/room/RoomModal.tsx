@@ -23,6 +23,7 @@ import { useRoomSubscription } from "@/app/hooks/queries/room/queries/useRoomQue
 import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
 import { currentRoomIdAtom } from "@/app/atoms/roomAtom";
 import { useRoomMutation } from "@/app/hooks/queries/room_modal/useRoomMutation";
+import { Button } from "@/components/ui/button";
 
 export default function RoomModal() {
   const roomId = useAtomValue(currentRoomIdAtom);
@@ -159,14 +160,14 @@ export default function RoomModal() {
             <h2 className={`${titleStyle} mr-4`}>주제</h2>
             <label>{getDisplayTopic(pickedTopic)}</label>
             <div className="absolute right-0">
-              <button
-                className="flex items-center justify-center
-                w-9 h-7 mr-1 rounded-lg
-                text bg-zinc-900 hover:bg-zinc-800"
+              <Button
+                variant="secondary"
+                size="icon-sm"
+                className="mr-1 w-10"
                 onClick={() => setShowTopicModal(true)}
               >
-                <Plus size={12} />
-              </button>
+                <Plus size={10} />
+              </Button>
             </div>
           </div>
 
@@ -184,7 +185,7 @@ export default function RoomModal() {
             />
             {showScoreInfo && (
               <div
-                className="absolute -bottom-13 px-2 py-1 rounded bg-zinc-800 text-sm whitespace-pre-wrap z-20"
+                className="absolute -bottom-13 px-2 py-1  border border-zinc-700 rounded bg-zinc-900 text-sm whitespace-pre-wrap z-20"
                 onClick={() => setShowScoreInfo(false)}
               >
                 <div className="flex gap-1">
@@ -197,22 +198,21 @@ export default function RoomModal() {
                 </div>
               </div>
             )}
-            <button
-              className={`px-3 py-1 mr-1 rounded hover:bg-zinc-900 transition-colors ${
-                rank === "count" ? "bg-zinc-900" : "bg-zinc-800 text-zinc-400"
-              }`}
+            <Button
+              variant={rank === "count" ? "secondary" : "outline"}
+              size="sm"
+              className="mr-1"
               onClick={() => setRank("count")}
             >
               개수
-            </button>
-            <button
-              className={`px-3 py-1 rounded hover:bg-zinc-900 transition-colors ${
-                rank === "time" ? "bg-zinc-900" : "bg-zinc-800 text-zinc-400"
-              }`}
+            </Button>
+            <Button
+              variant={rank === "time" ? "secondary" : "outline"}
+              size="sm"
               onClick={() => setRank("time")}
             >
               시간
-            </button>
+            </Button>
           </div>
 
           <div className="flex flex-row items-center">
@@ -226,21 +226,20 @@ export default function RoomModal() {
         </div>
 
         <div className="flex justify-center">
-          <button
-            className={`w-30 py-2 rounded-lg text bg-zinc-900 hover:bg-zinc-800 transition-all ${
-              isProcessing ? "cursor-not-allowed opacity-50" : ""
-            }`}
+          <Button
+            variant="secondary"
+            className="w-30 rounded-lg"
+            disabled={isProcessing}
             onClick={
               roomDescription === "create" ? handleCreateRoom : handleUpdateRoom
             }
-            disabled={isProcessing}
           >
             {isProcessing
               ? "처리 중..."
               : roomDescription === "create"
                 ? "생성"
                 : "수정"}
-          </button>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

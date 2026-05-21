@@ -13,6 +13,7 @@ import { alertModalState, preventClickState } from "@/app/atoms/modalAtom";
 import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
 import { useRoomList } from "@/app/hooks/queries/lobby/useLobbyQuery";
 import { useRoomNavigation } from "@/app/hooks/queries/room/actions/useRoomNavigation";
+import { Button } from "@/components/ui/button";
 
 export default function RoomCodeModal() {
   const [, setAlertModal] = useAtom(alertModalState);
@@ -47,13 +48,9 @@ export default function RoomCodeModal() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button
-          className="px-8 py-3 rounded-sm
-                  text-xl select-none bg-zinc-900
-                  hover:bg-zinc-800"
-        >
+        <Button variant="secondary" size="xl" className="px-8 py-3">
           코드 입력
-        </button>
+        </Button>
       </DialogTrigger>
 
       <DialogContent className="bg-zinc-950 text-zinc-100 select-none">

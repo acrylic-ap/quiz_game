@@ -9,6 +9,7 @@ import { useRoomNavigation } from "@/app/hooks/queries/room/actions/useRoomNavig
 import { LobbyRoom } from "@/app/types/common/lobby/room";
 import RoomCodeModal from "@/app/components/modals/RoomCodeModal";
 import { useSetAtom } from "jotai";
+import { Button } from "@/components/ui/button";
 
 export const Section = () => {
   const setRoomDescription = useSetAtom(setRoomModalState);
@@ -41,14 +42,14 @@ export const Section = () => {
         className="w-[75%] mb-3
                   flex justify-end"
       >
-        <button
-          className="px-8 py-3 mr-2 rounded-sm
-                  text-xl select-none bg-zinc-900
-                  hover:bg-zinc-800"
+        <Button
+          variant="secondary"
+          size="xl"
+          className="px-8 py-3 mr-2"
           onClick={handleCreateRoom}
         >
           방 생성
-        </button>
+        </Button>
 
         <RoomCodeModal />
       </div>
