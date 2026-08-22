@@ -7,9 +7,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAtom } from "jotai";
-import { loginModalState } from "@/app/atoms/modalAtom";
+import { loginModalState } from "@/atoms/modalAtom";
 import { GoogleLogo } from "@/public/svg/Google";
-import { useGoogleLogin } from "@/app/hooks/queries/common/account/useAuthMutation";
+import { useGoogleLogin } from "@/hooks/queries/common/account/useAuthMutation";
 
 export default function LoginModal() {
   const [showLoginModal, setShowLoginModal] = useAtom(loginModalState);

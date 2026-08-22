@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { useAtom } from "jotai";
-import { alertModalState, preventClickState } from "@/app/atoms/modalAtom";
-import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
-import { useRoomList } from "@/app/hooks/queries/lobby/useLobbyQuery";
-import { useRoomNavigation } from "@/app/hooks/queries/room/actions/useRoomNavigation";
+import { alertModalState, preventClickState } from "@/atoms/modalAtom";
+import { useAuth } from "@/hooks/queries/common/account/useAuth";
+import { useRoomList } from "@/hooks/queries/lobby/useLobbyQuery";
+import { useRoomNavigation } from "@/hooks/queries/room/actions/useRoomNavigation";
 import { Button } from "@/components/ui/button";
 
 export default function RoomCodeModal() {

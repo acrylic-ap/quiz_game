@@ -1,10 +1,10 @@
 "use client";
 
-import { alertModalState, loginModalState } from "@/app/atoms/modalAtom";
-import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
+import { alertModalState, loginModalState } from "@/atoms/modalAtom";
+import { useAuth } from "@/hooks/queries/common/account/useAuth";
 import { useSetAtom } from "jotai";
 import UserInfoDropdown from "./UserInfoDropdown";
-import { useLogout } from "../hooks/queries/common/account/useLogout";
+import { useLogout } from "@/hooks/queries/common/account/useLogout";
 
 export const Header = () => {
   const setShowLoginModal = useSetAtom(loginModalState);

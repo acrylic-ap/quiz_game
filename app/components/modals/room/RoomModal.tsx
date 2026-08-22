@@ -15,14 +15,14 @@ import {
   alertModalState,
   setRoomModalState,
   showTopicModalState,
-} from "@/app/atoms/modalAtom";
-import { pickedTopicAtom } from "@/app/atoms/topicAtom";
-import { topicDecisionAtom, questionCountAtom } from "@/app/atoms/roomFormAtom";
-import { getDisplayTopic } from "@/app/lib/utils";
-import { useRoomSubscription } from "@/app/hooks/queries/room/queries/useRoomQuery";
-import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
-import { currentRoomIdAtom } from "@/app/atoms/roomAtom";
-import { useRoomMutation } from "@/app/hooks/queries/room_modal/useRoomMutation";
+} from "@/atoms/modalAtom";
+import { pickedTopicAtom } from "@/atoms/topicAtom";
+import { topicDecisionAtom, questionCountAtom } from "@/atoms/roomFormAtom";
+import { getDisplayTopic } from "@/utils/getDisplayTopic";
+import { useRoomSubscription } from "@/hooks/queries/room/queries/useRoomQuery";
+import { useAuth } from "@/hooks/queries/common/account/useAuth";
+import { currentRoomIdAtom } from "@/atoms/roomAtom";
+import { useRoomMutation } from "@/hooks/queries/room_modal/useRoomMutation";
 import { Button } from "@/components/ui/button";
 
 export default function RoomModal() {

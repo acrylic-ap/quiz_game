@@ -1,6 +1,6 @@
 "use client";
 
-import { alertModalState } from "@/app/atoms/modalAtom";
+import { alertModalState } from "@/atoms/modalAtom";
 import {
   Dialog,
   DialogContent,

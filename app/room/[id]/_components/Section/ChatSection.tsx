@@ -1,8 +1,8 @@
-import { currentRoomIdAtom } from "@/app/atoms/roomAtom";
-import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
-import { useSendMessage } from "@/app/hooks/queries/room/actions/useSendMessage";
-import { useChatMessages } from "@/app/hooks/queries/room/queries/useChatQuery";
-import { useRoomUsers } from "@/app/hooks/queries/room/queries/useRoomUsers";
+import { currentRoomIdAtom } from "@/atoms/roomAtom";
+import { useAuth } from "@/hooks/queries/common/account/useAuth";
+import { useSendMessage } from "@/hooks/queries/room/actions/useSendMessage";
+import { useChatMessages } from "@/hooks/queries/room/queries/useChatQuery";
+import { useRoomUsers } from "@/hooks/queries/room/queries/useRoomUsers";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAtomValue } from "jotai";

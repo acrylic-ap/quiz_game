@@ -1,12 +1,12 @@
-import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
-import { useRoomUsers } from "@/app/hooks/queries/room/queries/useRoomUsers";
+import { useAuth } from "@/hooks/queries/common/account/useAuth";
+import { useRoomUsers } from "@/hooks/queries/room/queries/useRoomUsers";
 import { RoomInfo } from "./RoomInfo";
 import { UserList } from "./UserList";
 import { ChatSection } from "./ChatSection";
-import { useGameActions } from "@/app/hooks/queries/room/actions/useGameActions";
+import { useGameActions } from "@/hooks/queries/room/actions/useGameActions";
 import { GameControls } from "./GameControls";
 import { useAtomValue } from "jotai";
-import { currentRoomIdAtom } from "@/app/atoms/roomAtom";
+import { currentRoomIdAtom } from "@/atoms/roomAtom";
 
 export const Section = () => {
   const roomId = useAtomValue(currentRoomIdAtom);

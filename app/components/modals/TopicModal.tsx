@@ -1,7 +1,7 @@
 "use client";
 
-import { showTopicModalState } from "@/app/atoms/modalAtom";
-import { pickedTopicAtom } from "@/app/atoms/topicAtom";
+import { showTopicModalState } from "@/atoms/modalAtom";
+import { pickedTopicAtom } from "@/atoms/topicAtom";
 import {
   Dialog,
   DialogContent,
@@ -11,11 +11,11 @@ import {
 import { useAtom } from "jotai";
 import { Filter, Image, Music, Text } from "lucide-react";
 import { useRef, useState } from "react";
-import { useTopicQuery } from "@/app/hooks/queries/room_modal/useTopicQuery";
+import { useTopicQuery } from "@/hooks/queries/room_modal/useTopicQuery";
 import {
   TOPIC_DECISION_LIST,
   TopicDecisionType,
-} from "@/app/types/common/room/topicDecision";
+} from "@/types/common/room/topicDecision";
 import { Button } from "@/components/ui/button";
 import {
   SelectContent,

@@ -1,10 +1,10 @@
 "use client";
 
-import { showKickedModalState } from "@/app/atoms/modalAtom";
-import { currentRoomIdAtom } from "@/app/atoms/roomAtom";
-import { useUsers } from "@/app/hooks/queries/common/account/useUsers";
-import { useUnkickUser } from "@/app/hooks/queries/room/actions/useUnkickUser";
-import { useRoomKickedList } from "@/app/hooks/queries/room/session/useRoomKickedList";
+import { showKickedModalState } from "@/atoms/modalAtom";
+import { currentRoomIdAtom } from "@/atoms/roomAtom";
+import { useUsers } from "@/hooks/queries/common/account/useUsers";
+import { useUnkickUser } from "@/hooks/queries/room/actions/useUnkickUser";
+import { useRoomKickedList } from "@/hooks/queries/room/session/useRoomKickedList";
 import {
   Dialog,
   DialogContent,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { preventClickState } from "./atoms/modalAtom";
+import { preventClickState } from "../atoms/modalAtom";
 import { Header } from "@/app/_components/Header";
 import { Section } from "@/app/_components/Section";
 

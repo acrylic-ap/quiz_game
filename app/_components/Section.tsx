@@ -2,11 +2,11 @@ import {
   alertModalState,
   preventClickState,
   setRoomModalState,
-} from "@/app/atoms/modalAtom";
-import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
-import { useRoomList } from "@/app/hooks/queries/lobby/useLobbyQuery";
-import { useRoomNavigation } from "@/app/hooks/queries/room/actions/useRoomNavigation";
-import { LobbyRoom } from "@/app/types/common/lobby/room";
+} from "@/atoms/modalAtom";
+import { useAuth } from "@/hooks/queries/common/account/useAuth";
+import { useRoomList } from "@/hooks/queries/lobby/useLobbyQuery";
+import { useRoomNavigation } from "@/hooks/queries/room/actions/useRoomNavigation";
+import { LobbyRoom } from "@/types/common/lobby/room";
 import RoomCodeModal from "@/app/components/modals/RoomCodeModal";
 import { useSetAtom } from "jotai";
 import { Button } from "@/components/ui/button";

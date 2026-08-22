@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useAtom } from "jotai";
-import { questionCountAtom } from "@/app/atoms/roomFormAtom";
+import { questionCountAtom } from "@/atoms/roomFormAtom";
 
 export function StepSlider() {
   const [internalValue, setInternalValue] = useAtom(questionCountAtom);

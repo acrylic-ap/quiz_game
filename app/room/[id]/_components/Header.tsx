@@ -1,11 +1,11 @@
-import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
-import { useRoomKicked } from "@/app/hooks/queries/room/session/useRoomKicked";
-import { useRoomSubscription } from "@/app/hooks/queries/room/queries/useRoomQuery";
-import { useRoomUsers } from "@/app/hooks/queries/room/queries/useRoomUsers";
+import { useAuth } from "@/hooks/queries/common/account/useAuth";
+import { useRoomKicked } from "@/hooks/queries/room/session/useRoomKicked";
+import { useRoomSubscription } from "@/hooks/queries/room/queries/useRoomQuery";
+import { useRoomUsers } from "@/hooks/queries/room/queries/useRoomUsers";
 import { SquareArrowRightExit } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRoomExitActions } from "@/app/hooks/queries/room/session/useRoomExitActions";
-import { currentRoomIdAtom } from "@/app/atoms/roomAtom";
+import { useRoomExitActions } from "@/hooks/queries/room/session/useRoomExitActions";
+import { currentRoomIdAtom } from "@/atoms/roomAtom";
 import { useAtomValue } from "jotai";
 
 export const Header = () => {

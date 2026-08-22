@@ -3,7 +3,7 @@
 
 import { useEffect } from "react";
 import { useSetAtom } from "jotai";
-import { currentRoomIdAtom } from "@/app/atoms/roomAtom"; // 경로는 맞게 조정
+import { currentRoomIdAtom } from "@/atoms/roomAtom"; // 경로는 맞게 조정
 
 export default function RoomProvider({
   children,

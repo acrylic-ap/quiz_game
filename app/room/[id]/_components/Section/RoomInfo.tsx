@@ -1,13 +1,13 @@
-import { alertModalState, setRoomModalState } from "@/app/atoms/modalAtom";
-import { currentRoomIdAtom } from "@/app/atoms/roomAtom";
-import { useAuth } from "@/app/hooks/queries/common/account/useAuth";
-import { useRoomSubscription } from "@/app/hooks/queries/room/queries/useRoomQuery";
-import { useRoomUsers } from "@/app/hooks/queries/room/queries/useRoomUsers";
-import { getDisplayTopic } from "@/app/lib/utils";
+import { alertModalState, setRoomModalState } from "@/atoms/modalAtom";
+import { currentRoomIdAtom } from "@/atoms/roomAtom";
+import { useAuth } from "@/hooks/queries/common/account/useAuth";
+import { useRoomSubscription } from "@/hooks/queries/room/queries/useRoomQuery";
+import { useRoomUsers } from "@/hooks/queries/room/queries/useRoomUsers";
+import { getDisplayTopic } from "@/utils/getDisplayTopic";
 import {
   TOPIC_DECISION_LIST,
   TopicDecisionType,
-} from "@/app/types/common/room/topicDecision";
+} from "@/types/common/room/topicDecision";
 import { useAtom, useAtomValue } from "jotai";
 import { Eye, EyeClosed, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";

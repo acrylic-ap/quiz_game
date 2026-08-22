@@ -1,6 +1,6 @@
 "use client";
 
-import { selectModalState } from "@/app/atoms/modalAtom";
+import { selectModalState } from "@/atoms/modalAtom";
 import {
   Dialog,
   DialogContent,

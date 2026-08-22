@@ -11,8 +11,8 @@ import {
   DoorOpen,
 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useRoomUsers } from "@/app/hooks/queries/room/queries/useRoomUsers";
-import { useRoomSubscription } from "@/app/hooks/queries/room/queries/useRoomQuery";
+import { useRoomUsers } from "@/hooks/queries/room/queries/useRoomUsers";
+import { useRoomSubscription } from "@/hooks/queries/room/queries/useRoomQuery";
 
 const players = [
   { name: "Minho", score: 1800, correct: true },
