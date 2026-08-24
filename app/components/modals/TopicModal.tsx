@@ -15,7 +15,7 @@ import { useTopicQuery } from "@/hooks/queries/room_modal/useTopicQuery";
 import {
   TOPIC_DECISION_LIST,
   TopicDecisionType,
-} from "@/types/common/room/topicDecision";
+} from "@/types/common/room/topic";
 import { Button } from "@/components/ui/button";
 import {
   SelectContent,

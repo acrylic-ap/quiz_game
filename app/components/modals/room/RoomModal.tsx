@@ -24,6 +24,7 @@ import { useAuth } from "@/hooks/queries/common/account/useAuth";
 import { currentRoomIdAtom } from "@/atoms/roomAtom";
 import { useRoomMutation } from "@/hooks/queries/room_modal/useRoomMutation";
 import { Button } from "@/components/ui/button";
+import { RankBasis } from "@/types/common/room/room";
 
 export default function RoomModal() {
   const roomId = useAtomValue(currentRoomIdAtom);
@@ -33,7 +34,7 @@ export default function RoomModal() {
   const [, setAlertModal] = useAtom(alertModalState);
   const [, setShowTopicModal] = useAtom(showTopicModalState);
   const [pickedTopic, setPickedTopic] = useAtom(pickedTopicAtom);
-  const [internalValue, setInternalValue] = useAtom(questionCountAtom);
+  const [lastRound, setLastRound] = useAtom(questionCountAtom);
   const [decision, setDecision] = useAtom(topicDecisionAtom);
 
   // React Queries
@@ -44,27 +45,27 @@ export default function RoomModal() {
   // Local States
   const [roomName, setRoomName] = useState("");
   const [selectedCapacity, setSelectedCapacity] = useState(2);
-  const [rank, setRank] = useState<"count" | "time">("count");
+  const [rankBasis, setRankBasis] = useState<RankBasis>("count");
   const [showPublic, setShowPublic] = useState(true);
   const [showScoreInfo, setShowScoreInfo] = useState(false);
 
   // 수정 모드일 때 기존 데이터 세팅
   useEffect(() => {
     if (roomDescription === "edit" && room) {
-      setRoomName(room.roomName || "");
-      setDecision(room.decision || "random");
-      setInternalValue(room.internalValue || 10);
-      setShowPublic(room.showPublic ?? true);
-      setRank(room.rank || "count");
-      setSelectedCapacity(room.maxCapacity || 2);
+      setRoomName(room.config.roomName || "");
+      setDecision(room.gameConfig.decision || "random");
+      setLastRound(room.gameConfig.lastRound || 10);
+      setShowPublic(room.config.showPublic ?? true);
+      setRankBasis(room.gameConfig.rankBasis || "count");
+      setSelectedCapacity(room.config.maxCapacity || 2);
 
-      if (room.topicItem) {
-        setPickedTopic(new Map(room.topicItem));
+      if (room.gameConfig.topic) {
+        setPickedTopic(new Map(room.gameConfig.topic));
       }
     } else if (roomDescription === "create") {
       setRoomName("");
     }
-  }, [roomDescription, room, setInternalValue, setPickedTopic]);
+  }, [roomDescription, room, setLastRound, setPickedTopic]);
 
   const isRoomValid = () => {
     if (!roomName.trim()) {
@@ -80,14 +81,17 @@ export default function RoomModal() {
 
   // 방 생성/수정 공통 데이터 객체
   const getRoomPayload = () => ({
-    roomName: roomName.trim(),
-    maxCapacity: selectedCapacity,
-    decision: decision,
-    rank: rank,
-    showPublic: showPublic,
-    topic: [...pickedTopic.keys()].join(", "),
-    internalValue: internalValue || "",
-    updatedAt: new Date(),
+    config: {
+      roomName: roomName.trim(),
+      maxCapacity: selectedCapacity,
+      showPublic,
+    },
+    gameConfig: {
+      lastRound,
+      topic: [...pickedTopic.keys()].join(", "),
+      decision,
+      rankBasis: rankBasis,
+    },
   });
 
   const handleCreateRoom = () => {
@@ -199,17 +203,17 @@ export default function RoomModal() {
               </div>
             )}
             <Button
-              variant={rank === "count" ? "secondary" : "outline"}
+              variant={rankBasis === "count" ? "secondary" : "outline"}
               size="sm"
               className="mr-1"
-              onClick={() => setRank("count")}
+              onClick={() => setRankBasis("count")}
             >
               개수
             </Button>
             <Button
-              variant={rank === "time" ? "secondary" : "outline"}
+              variant={rankBasis === "time" ? "secondary" : "outline"}
               size="sm"
-              onClick={() => setRank("time")}
+              onClick={() => setRankBasis("time")}
             >
               시간
             </Button>

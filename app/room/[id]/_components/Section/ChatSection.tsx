@@ -2,9 +2,7 @@ import { currentRoomIdAtom } from "@/atoms/roomAtom";
 import { useAuth } from "@/hooks/queries/common/account/useAuth";
 import { useSendMessage } from "@/hooks/queries/room/actions/useSendMessage";
 import { useChatMessages } from "@/hooks/queries/room/queries/useChatQuery";
-import { useRoomUsers } from "@/hooks/queries/room/queries/useRoomUsers";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useRoomSubscription } from "@/hooks/queries/room/queries/useRoomQuery";
 import { useAtomValue } from "jotai";
 import { Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -12,33 +10,44 @@ import { useEffect, useRef, useState } from "react";
 export const ChatSection = () => {
   const roomId = useAtomValue(currentRoomIdAtom);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
   const [message, setMessage] = useState("");
 
   const { data: messages = [] } = useChatMessages(roomId);
+  const { data: room } = useRoomSubscription(roomId);
+  const { data: user } = useAuth();
+
   const sendMessageMutation = useSendMessage();
 
-  const { data: user } = useAuth();
-  const { data: users = [] } = useRoomUsers(roomId);
+  const isOwner = user?.uid === room?.config.ownerId;
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    chatEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
   }, [messages]);
 
   const handleSend = () => {
-    const currentUser = users.find((u) => u.id === user?.uid);
+    if (!user) return;
 
-    if (!currentUser) return;
+    const text = message.trim();
 
-    if (message.trim() && !sendMessageMutation.isPending) {
-      sendMessageMutation.mutate(
-        {
-          username: currentUser.nickname,
-          text: message,
-          isAdmin: currentUser.isOwner,
-        },
-        { onSuccess: () => setMessage("") },
-      );
+    if (!text || sendMessageMutation.isPending) {
+      return;
     }
+
+    sendMessageMutation.mutate(
+      {
+        username: user.nickname,
+        text,
+        isAdmin: isOwner,
+      },
+      {
+        onSuccess: () => {
+          setMessage("");
+        },
+      },
+    );
   };
 
   return (
@@ -51,28 +60,35 @@ export const ChatSection = () => {
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex gap-3 ${msg.username === "시스템" ? "justify-center" : ""}`}
+            className={`flex gap-3 ${
+              msg.username === "시스템" ? "justify-center" : ""
+            }`}
           >
             {msg.username !== "시스템" && (
               <div
                 className="w-8 h-8 rounded-full
-              bg-zinc-700 flex items-center justify-center
-              font-bold text-zinc-300 mt-0.5"
+                bg-zinc-700 flex items-center justify-center
+                font-bold text-zinc-300 mt-0.5"
               >
-                {msg.username ? msg.username[0] : ""}
+                {msg.username?.[0] ?? ""}
               </div>
             )}
+
             <div
-              className={`flex flex-col ${msg.username === "시스템" ? "items-center" : ""}`}
+              className={`flex flex-col ${
+                msg.username === "시스템" ? "items-center" : ""
+              }`}
             >
               {msg.username !== "시스템" && (
                 <div className="flex items-baseline gap-2 mb-1">
                   <span className="font-semibold text-zinc-100">
                     {msg.username}
                   </span>
+
                   <span className="text-xs text-zinc-600">{msg.time}</span>
                 </div>
               )}
+
               <div
                 className={`px-4 py-2 rounded-xl w-fit ${
                   msg.username === "시스템"
@@ -85,6 +101,7 @@ export const ChatSection = () => {
             </div>
           </div>
         ))}
+
         <div ref={chatEndRef} />
       </div>
 
@@ -106,16 +123,18 @@ export const ChatSection = () => {
             }
           }}
         />
+
         <button
           className={`
-        text-white px-5 py-2.5 rounded-lg font-semibold
-        transition active:scale-95
-        ${
-          message
-            ? "bg-indigo-600 hover:bg-indigo-500"
-            : "bg-zinc-600 cursor-not-allowed"
-        }`}
-          disabled={sendMessageMutation.isPending}
+            text-white px-5 py-2.5 rounded-lg font-semibold
+            transition active:scale-95
+            ${
+              message.trim()
+                ? "bg-indigo-600 hover:bg-indigo-500"
+                : "bg-zinc-600 cursor-not-allowed"
+            }
+          `}
+          disabled={sendMessageMutation.isPending || !message.trim()}
           onClick={handleSend}
         >
           <Send />

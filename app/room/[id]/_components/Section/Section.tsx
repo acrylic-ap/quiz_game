@@ -7,6 +7,7 @@ import { useGameActions } from "@/hooks/queries/room/actions/useGameActions";
 import { GameControls } from "./GameControls";
 import { useAtomValue } from "jotai";
 import { currentRoomIdAtom } from "@/atoms/roomAtom";
+import { useRoomSubscription } from "@/hooks/queries/room/queries/useRoomQuery";
 
 export const Section = () => {
   const roomId = useAtomValue(currentRoomIdAtom);
@@ -14,6 +15,7 @@ export const Section = () => {
   const { data: users = [] } = useRoomUsers(roomId);
   const { data: user } = useAuth();
   const { toggleReady, startGame } = useGameActions(roomId, user?.uid);
+  const { data: roomData } = useRoomSubscription(roomId);
 
   const currentUser = users.find((u) => u.id === user?.uid);
 
@@ -33,7 +35,7 @@ export const Section = () => {
         <div className="flex gap-3">
           {currentUser && (
             <GameControls
-              isOwner={currentUser.isOwner}
+              isOwner={currentUser.id === roomData?.config.ownerId}
               isReady={currentUser.isReady}
               onStart={() => startGame(users)}
               onToggleReady={() => toggleReady(currentUser.isReady)}

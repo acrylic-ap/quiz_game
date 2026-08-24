@@ -1,101 +1,120 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { db, rtdb } from "@/lib/firebase";
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { ref, set, update } from "firebase/database";
+import { ref, set, update, serverTimestamp } from "firebase/database";
+import { rtdb } from "@/lib/firebase";
 import { generateRoomId } from "@/utils/generateRoomId";
 import { useRouter } from "next/navigation";
 import { useAtom } from "jotai";
 import { alertModalState, preventClickState } from "@/atoms/modalAtom";
 import { useAuth } from "@/hooks/queries/common/account/useAuth";
+import { TopicDecisionType } from "@/types/common/room/topic";
+import { RankBasis } from "@/types/common/room/room";
+
+interface RoomPayload {
+  config: {
+    roomName: string;
+    maxCapacity: number;
+    showPublic: boolean;
+  };
+  gameConfig: {
+    lastRound: number;
+    topic: string;
+    decision: TopicDecisionType;
+    rankBasis: RankBasis;
+  };
+}
 
 export const useRoomMutation = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
+
   const [, setAlertModal] = useAtom(alertModalState);
   const [, setPreventClick] = useAtom(preventClickState);
+
   const { data: user } = useAuth();
 
   const createRoom = useMutation({
-    mutationFn: async (data: any) => {
-      if (!user) throw new Error("로그인이 필요합니다.");
+    mutationFn: async (data: RoomPayload) => {
+      if (!user) {
+        throw new Error("로그인이 필요합니다.");
+      }
 
       setPreventClick(true);
 
-      let customId = "";
-      let isUnique = false;
+      const roomId = generateRoomId();
 
-      while (!isUnique) {
-        customId = generateRoomId();
-        const docRef = doc(db, "rooms", customId);
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) isUnique = true;
-      }
+      const roomRef = ref(rtdb, `room_sessions/${roomId}`);
 
-      await setDoc(doc(db, "rooms", customId), {
-        ...data,
-        capacity: 1,
-        ownerId: user.uid,
-        createdAt: new Date(),
-        playing: false,
-      });
-
-      await set(ref(rtdb, `room_sessions/${customId}`), {
+      await set(roomRef, {
         status: "waiting",
         currentRound: 0,
+
         config: {
-          roomName: data.roomName,
-          maxCapacity: data.maxCapacity,
-          rank: data.rank,
+          ...data.config,
+          capacity: 1,
+          ownerId: user.uid,
         },
+
+        gameConfig: data.gameConfig,
+
         users: {
           [user.uid]: {
             nickname: user.nickname,
-            isOwner: true,
             jointedAt: serverTimestamp(),
           },
         },
-        messages: {},
       });
 
-      return customId;
+      return roomId;
     },
-    onSuccess: (customId) => {
+
+    onSuccess: (roomId) => {
       setPreventClick(false);
-      queryClient.invalidateQueries({ queryKey: ["rooms"] });
-      router.replace(`/room/${customId}`);
+
+      queryClient.invalidateQueries({
+        queryKey: ["rooms"],
+      });
+
+      router.replace(`/room/${roomId}`);
     },
+
     onError: (error: any) => {
       setPreventClick(false);
+
       console.error("방 생성 에러:", error);
       setAlertModal("방 생성 중 오류가 발생했습니다.");
     },
   });
 
   const updateRoom = useMutation({
-    mutationFn: async ({ roomId, data }: { roomId: string; data: any }) => {
-      const docRef = doc(db, "rooms", roomId);
-      await updateDoc(docRef, data);
+    mutationFn: async ({
+      roomId,
+      data,
+    }: {
+      roomId: string;
+      data: RoomPayload;
+    }) => {
+      const roomRef = ref(rtdb, `room_sessions/${roomId}`);
 
-      await update(ref(rtdb, `room_sessions/${roomId}/config`), {
-        roomName: data.roomName,
-        maxCapacity: data.maxCapacity,
-        rank: data.rank,
+      await update(roomRef, {
+        config: data.config,
+        gameConfig: data.gameConfig,
       });
     },
+
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({
+        queryKey: ["rooms"],
+      });
     },
+
     onError: (error: any) => {
-      console.error("방 수정 에러:", error);
+      console.error("방 정보 수정 에러:", error);
       setAlertModal("방 정보를 수정하는데 실패했습니다.");
     },
   });
 
-  return { createRoom, updateRoom };
+  return {
+    createRoom,
+    updateRoom,
+  };
 };

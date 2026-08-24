@@ -76,7 +76,7 @@ export const Section = () => {
                       flex flex-col
                       p-5
                       rounded-lg
-                      ${room.playing ? "bg-zinc-950" : "bg-zinc-900 hover:bg-zinc-800"}`}
+                      ${room.status === "playing" ? "bg-zinc-950" : "bg-zinc-900 hover:bg-zinc-800"}`}
               key={room.id}
             >
               <h2 className="w-full text-xl font-bold truncate">
@@ -92,9 +92,7 @@ export const Section = () => {
                         flex items-center justify-center
                         rounded-full"
               >
-                {room.internalValue == 60
-                  ? "전체"
-                  : `${room.internalValue}문제`}
+                {room.lastRound == 60 ? "전체" : `${room.lastRound}문제`}
               </div>
               <div
                 className={`absolute right-3 bottom-2

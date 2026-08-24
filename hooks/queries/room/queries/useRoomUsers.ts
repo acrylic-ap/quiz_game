@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ref, onValue, off } from "firebase/database";
 import { rtdb } from "@/lib/firebase";
 import { useEffect, useMemo } from "react";
-import { RoomUser } from "@/types/common/room/user";
+import { RoomUser } from "@/types/common/room/room";
 
 export const useRoomUsers = (roomId: string | undefined) => {
   const queryClient = useQueryClient();

@@ -1,15 +1,35 @@
-import { TopicDecisionType } from "./topicDecision";
+import { TopicDecisionType } from "./topic";
+
+export type Status = "waiting" | "playing";
 
 export interface Room {
   id: string;
+  config: Config;
+  status: Status;
+  users: RoomUser[];
+  gameConfig: GameConfig;
+}
+
+export interface RoomUser {
+  id: string;
+  nickname: string;
+  isReady: boolean;
+  avatar?: string;
+}
+
+export interface Config {
   roomName: string;
-  topicItem: Map<string, string>;
   capacity: number;
   maxCapacity: number;
-  playing: boolean;
-  decision: TopicDecisionType;
-  internalValue: number;
   showPublic: boolean;
-  ownerId?: string;
-  rank: "count" | "time";
+  ownerId: string;
+}
+
+export type RankBasis = "count" | "time";
+
+export interface GameConfig {
+  lastRound: number;
+  topic: Map<string, string>;
+  decision: TopicDecisionType;
+  rankBasis: RankBasis;
 }

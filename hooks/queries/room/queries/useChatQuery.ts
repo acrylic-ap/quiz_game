@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { db } from "@/lib/firebase";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { onValue, ref } from "firebase/database";
+import { rtdb } from "@/lib/firebase";
 import { Chat } from "@/types/common/room/chat";
 
 export const useChatMessages = (roomId: string | undefined) => {
@@ -11,23 +11,38 @@ export const useChatMessages = (roomId: string | undefined) => {
   useEffect(() => {
     if (!roomId) return;
 
-    const chatsCollection = collection(db, `rooms/${roomId}/chats`);
-    const q = query(chatsCollection, orderBy("time", "asc"));
+    const chatsRef = ref(rtdb, `chats/${roomId}`);
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const messageData: Chat[] = snapshot.docs.map((doc) => {
-        const data = doc.data();
+    const unsubscribe = onValue(chatsRef, (snapshot) => {
+      const data = snapshot.val();
+
+      if (!data) {
+        queryClient.setQueryData<Chat[]>(queryKey, []);
+        return;
+      }
+
+      const messageData: Chat[] = Object.entries(data).map(([id, value]) => {
+        const chat = value as {
+          username: string;
+          text: string;
+          time: number;
+          isAdmin?: boolean;
+        };
+
         return {
-          id: doc.id,
-          username: data.username,
-          text: data.text,
-          time: data.time?.toDate().toLocaleTimeString("ko-KR") || "방금 전",
-          isAdmin: data.isAdmin,
+          id,
+          username: chat.username,
+          text: chat.text,
+          time: new Date(chat.time).toLocaleTimeString("ko-KR", {
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
+          }),
+          isAdmin: chat.isAdmin ?? false,
         };
       });
 
-      // ✅ React Query 캐시를 실시간으로 업데이트
-      queryClient.setQueryData(queryKey, messageData);
+      queryClient.setQueryData<Chat[]>(queryKey, messageData);
     });
 
     return () => unsubscribe();
@@ -35,8 +50,8 @@ export const useChatMessages = (roomId: string | undefined) => {
 
   return useQuery<Chat[]>({
     queryKey,
-    // 초기 캐시가 없을 때 undefined 에러 방지를 위해 빈 배열 반환
-    queryFn: () => queryClient.getQueryData<Chat[]>(queryKey) || [],
+    queryFn: () => queryClient.getQueryData<Chat[]>(queryKey) ?? [],
+    enabled: !!roomId,
     staleTime: Infinity,
   });
 };

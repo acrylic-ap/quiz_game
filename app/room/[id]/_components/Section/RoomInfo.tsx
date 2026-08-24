@@ -7,7 +7,7 @@ import { getDisplayTopic } from "@/utils/getDisplayTopic";
 import {
   TOPIC_DECISION_LIST,
   TopicDecisionType,
-} from "@/types/common/room/topicDecision";
+} from "@/types/common/room/topic";
 import { useAtom, useAtomValue } from "jotai";
 import { Eye, EyeClosed, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -22,8 +22,6 @@ export const RoomInfo = () => {
   const [, setAlertModal] = useAtom(alertModalState);
 
   const { data: roomData } = useRoomSubscription(roomId);
-
-  const { data: users = [] } = useRoomUsers(roomId);
   const { data: user } = useAuth();
 
   // 로그인이 안 돼 있는 경우 퇴실
@@ -35,11 +33,13 @@ export const RoomInfo = () => {
   }, [user]);
 
   const decisionLabel =
-    TOPIC_DECISION_LIST[roomData?.decision as TopicDecisionType]?.label ??
-    "랜덤";
+    TOPIC_DECISION_LIST[roomData?.gameConfig.decision as TopicDecisionType]
+      ?.label ?? "랜덤";
 
   const questionCountLabel =
-    roomData?.internalValue === 60 ? "모든" : roomData?.internalValue;
+    roomData?.gameConfig.lastRound === 60
+      ? "모든"
+      : roomData?.gameConfig.lastRound;
 
   return (
     <div
@@ -51,13 +51,14 @@ export const RoomInfo = () => {
         {true ? <Eye size={20} /> : <EyeClosed size={20} />}
         <span className="text-xl font-bold text-zinc-100">주제</span>
         <label className="text-lg">
-          {roomData?.topicItem && getDisplayTopic(roomData?.topicItem)}
+          {roomData?.gameConfig.topic &&
+            getDisplayTopic(roomData?.gameConfig.topic)}
           {`[${questionCountLabel}문제, ${decisionLabel}]`}
         </label>
       </div>
 
       <div className="h-fit flex">
-        {users.find((u) => u.id === user?.uid)?.isOwner && (
+        {user?.uid === roomData?.config.ownerId && (
           <button onClick={() => setRoomDescription("edit")}>
             <Settings
               size={22}

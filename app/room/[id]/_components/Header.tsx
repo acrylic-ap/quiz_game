@@ -1,7 +1,6 @@
 import { useAuth } from "@/hooks/queries/common/account/useAuth";
 import { useRoomKicked } from "@/hooks/queries/room/session/useRoomKicked";
 import { useRoomSubscription } from "@/hooks/queries/room/queries/useRoomQuery";
-import { useRoomUsers } from "@/hooks/queries/room/queries/useRoomUsers";
 import { SquareArrowRightExit } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRoomExitActions } from "@/hooks/queries/room/session/useRoomExitActions";
@@ -14,7 +13,6 @@ export const Header = () => {
   const router = useRouter();
 
   const { data: roomData } = useRoomSubscription(roomId);
-  const { data: users = [] } = useRoomUsers(roomId);
   const { data: user } = useAuth();
 
   // 로직을 전담하는 훅 호출
@@ -23,10 +21,11 @@ export const Header = () => {
   useRoomKicked(roomId, user?.uid);
 
   const handleExit = () => {
-    const currentUser = users.find((u) => u.id === user?.uid);
-    if (!currentUser) return;
+    if (!user) return;
 
-    confirmAndExit(currentUser.isOwner, () => router.replace("/"));
+    confirmAndExit(user.uid === roomData?.config.ownerId, () =>
+      router.replace("/"),
+    );
   };
 
   return (
@@ -38,7 +37,8 @@ export const Header = () => {
     >
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-bold tracking-tight">
-          <span className="text-indigo-400">{roomId}</span> {roomData?.roomName}
+          <span className="text-indigo-400">{roomId}</span>{" "}
+          {roomData?.config.roomName}
         </h1>
       </div>
 
