@@ -14,6 +14,8 @@ import { useAuth } from "@/hooks/queries/common/account/useAuth";
 import { useRoomList } from "@/hooks/queries/lobby/useLobbyQuery";
 import { useRoomNavigation } from "@/hooks/queries/room/actions/useRoomNavigation";
 import { Button } from "@/components/ui/button";
+import { get, ref } from "firebase/database";
+import { rtdb } from "@/lib/firebase";
 
 export default function RoomCodeModal() {
   const [, setAlertModal] = useAtom(alertModalState);
@@ -21,27 +23,39 @@ export default function RoomCodeModal() {
   const [roomCode, setRoomCode] = useState("");
 
   const { data: user } = useAuth();
-  const { data: roomList = [] } = useRoomList();
   const { handleEnterRoom } = useRoomNavigation(user, setAlertModal);
 
   const handleRoomCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRoomCode(e.target.value);
   };
 
-  const enterCodeRoom = () => {
+  const enterCodeRoom = async () => {
     const cleanRoomCode = roomCode.replace(/\s/g, "");
 
-    if (!roomCode) {
+    if (!cleanRoomCode) {
       return setAlertModal("코드를 입력해주세요!");
     }
 
-    const room = roomList.find((room) => room.id === cleanRoomCode);
+    try {
+      const roomRef = ref(rtdb, `room_sessions/${cleanRoomCode}`);
 
-    if (room) {
+      const snapshot = await get(roomRef);
+
+      if (!snapshot.exists()) {
+        return setAlertModal("유효하지 않은 방 코드입니다!");
+      }
+
+      const roomData = snapshot.val();
+
       setPreventClick(true);
-      handleEnterRoom(room);
-    } else {
-      setAlertModal("유효하지 않은 방 코드입니다!");
+
+      handleEnterRoom({
+        id: cleanRoomCode,
+        ...roomData,
+      });
+    } catch (error) {
+      console.error("방 코드 조회 에러:", error);
+      setAlertModal("방을 확인하는 중 오류가 발생했습니다.");
     }
   };
 
