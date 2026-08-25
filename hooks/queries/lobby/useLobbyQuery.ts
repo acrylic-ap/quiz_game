@@ -43,7 +43,6 @@ export const useRoomList = () => {
       (snapshot) => {
         if (!snapshot.exists()) {
           queryClient.setQueryData<LobbyRoom[]>(queryKey, []);
-
           return;
         }
 
@@ -57,6 +56,8 @@ export const useRoomList = () => {
             if (data.config?.showPublic === false) {
               return null;
             }
+
+            const users = data.users ?? {};
 
             const topicParts = data.gameConfig?.topic
               ? data.gameConfig.topic.split(", ")
@@ -74,7 +75,7 @@ export const useRoomList = () => {
               topicName,
               status: data.status ?? "waiting",
               roomName: data.config?.roomName ?? "",
-              capacity: data.config?.capacity ?? 0,
+              capacity: Object.keys(users).length,
               maxCapacity: data.config?.maxCapacity ?? 0,
               lastRound: data.gameConfig?.lastRound ?? 0,
             };
@@ -97,6 +98,6 @@ export const useRoomList = () => {
     queryKey,
     queryFn: () => queryClient.getQueryData<LobbyRoom[]>(queryKey) ?? [],
     enabled: !!topicMap,
-    staleTime: 0,
+    staleTime: Infinity,
   });
 };

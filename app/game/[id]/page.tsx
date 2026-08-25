@@ -31,8 +31,6 @@ const Header = () => {
 
   const { data: roomData } = useRoomSubscription(roomId);
 
-  console.log(roomData);
-
   return (
     <div className="relative flex h-[10%] min-h-[92px] w-full items-center justify-between border-b border-zinc-800 bg-zinc-950/80 px-6 backdrop-blur-xl">
       <div className="flex items-center gap-3">
@@ -42,7 +40,7 @@ const Header = () => {
 
         <div>
           <h1 className="text-lg font-semibold text-zinc-100">
-            {roomData?.roomName}
+            {roomData?.config.roomName}
           </h1>
           <p className="text-sm text-zinc-400">#{roomId}</p>
         </div>

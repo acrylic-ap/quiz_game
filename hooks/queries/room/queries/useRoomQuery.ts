@@ -95,8 +95,6 @@ export const useRoomSubscription = (roomId: string | undefined) => {
           const ownerSnap = await get(ownerSessionRef);
 
           if (!ownerSnap.exists()) {
-            console.log("방장 부재 감지: 유령 방을 정리합니다.");
-
             await remove(sessionRef);
 
             setRoomStatus("lost");
