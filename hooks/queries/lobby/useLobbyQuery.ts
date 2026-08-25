@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { db, rtdb } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
-import { onValue, ref, Unsubscribe } from "firebase/database";
+import { onValue, ref } from "firebase/database";
 import { LobbyRoom } from "@/types/common/lobby/room";
 
 export const useTopicMap = () => {

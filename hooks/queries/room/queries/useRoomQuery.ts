@@ -178,7 +178,7 @@ export const useRoomSubscription = (roomId: string | undefined) => {
     );
 
     return () => unsubscribe();
-  }, [roomId, topicMap, queryClient, user?.uid, users]);
+  }, [roomId, topicMap, queryClient, user?.uid]);
 
   const queryResult = useQuery<Room | null>({
     queryKey,

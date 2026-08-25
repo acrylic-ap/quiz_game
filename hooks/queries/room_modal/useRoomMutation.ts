@@ -96,8 +96,14 @@ export const useRoomMutation = () => {
       const roomRef = ref(rtdb, `room_sessions/${roomId}`);
 
       await update(roomRef, {
-        config: data.config,
-        gameConfig: data.gameConfig,
+        "config/roomName": data.config.roomName,
+        "config/maxCapacity": data.config.maxCapacity,
+        "config/showPublic": data.config.showPublic,
+
+        "gameConfig/lastRound": data.gameConfig.lastRound,
+        "gameConfig/topic": data.gameConfig.topic,
+        "gameConfig/decision": data.gameConfig.decision,
+        "gameConfig/rankBasis": data.gameConfig.rankBasis,
       });
     },
 

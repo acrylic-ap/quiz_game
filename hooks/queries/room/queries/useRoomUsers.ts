@@ -1,6 +1,6 @@
 // @/hooks/queries/room/useRoomUsers.ts
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ref, onValue, off } from "firebase/database";
+import { ref, onValue } from "firebase/database";
 import { rtdb } from "@/lib/firebase";
 import { useEffect, useMemo } from "react";
 import { RoomUser } from "@/types/common/room/room";
@@ -14,8 +14,9 @@ export const useRoomUsers = (roomId: string | undefined) => {
 
     const usersRef = ref(rtdb, `room_sessions/${roomId}/users`);
 
-    onValue(usersRef, (snapshot) => {
+    const unsubscribe = onValue(usersRef, (snapshot) => {
       const data = snapshot.val();
+
       const userList: RoomUser[] = data
         ? Object.entries(data).map(([uid, info]: [string, any]) => ({
             id: uid,
@@ -26,7 +27,7 @@ export const useRoomUsers = (roomId: string | undefined) => {
       queryClient.setQueryData<RoomUser[]>(queryKey, userList);
     });
 
-    return () => off(usersRef);
+    return unsubscribe;
   }, [roomId, queryClient, queryKey]);
 
   // 원본 배열 데이터를 가져옵니다.
