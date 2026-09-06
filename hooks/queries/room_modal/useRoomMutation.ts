@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useAtom } from "jotai";
 import { alertModalState, preventClickState } from "@/atoms/modalAtom";
 import { useAuth } from "@/hooks/queries/common/account/useAuth";
-import { TopicDecisionType } from "@/types/common/room/topic";
-import { RankBasis } from "@/types/common/room/room";
+import { TopicDecisionType } from "@/types/topic/topic";
+import { RankBasis } from "@/types/room/room";
 
 interface RoomPayload {
   config: {

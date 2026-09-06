@@ -1,5 +1,5 @@
 import { Status } from "../room/room";
-import { TopicDecisionType } from "../room/topic";
+import { TopicDecisionType } from "../topic/topic";
 
 export interface LobbyRoom {
   id: string;

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { Room } from "@/types/common/room/room";
+import { Room } from "@/types/room/room";
 
 export const useRoomDetail = (roomId: string | null) => {
   return useQuery<Room | null>({

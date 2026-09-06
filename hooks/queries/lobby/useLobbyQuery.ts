@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { db, rtdb } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { onValue, ref } from "firebase/database";
-import { LobbyRoom } from "@/types/common/lobby/room";
+import { LobbyRoom } from "@/types/lobby/room";
 
 export const useTopicMap = () => {
   return useQuery({

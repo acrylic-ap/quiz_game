@@ -19,12 +19,12 @@ import {
 import { pickedTopicAtom } from "@/atoms/topicAtom";
 import { topicDecisionAtom, questionCountAtom } from "@/atoms/roomFormAtom";
 import { getDisplayTopic } from "@/utils/getDisplayTopic";
-import { useRoomSubscription } from "@/hooks/queries/room/queries/useRoomQuery";
+import { useRoomSubscription } from "@/hooks/queries/room/crud/useRoomQuery";
 import { useAuth } from "@/hooks/queries/common/account/useAuth";
 import { currentRoomIdAtom } from "@/atoms/roomAtom";
 import { useRoomMutation } from "@/hooks/queries/room_modal/useRoomMutation";
 import { Button } from "@/components/ui/button";
-import { RankBasis } from "@/types/common/room/room";
+import { RankBasis } from "@/types/room/room";
 
 export default function RoomModal() {
   const roomId = useAtomValue(currentRoomIdAtom);

@@ -1,8 +1,8 @@
 import { currentRoomIdAtom } from "@/atoms/roomAtom";
 import { useAuth } from "@/hooks/queries/common/account/useAuth";
 import { useSendMessage } from "@/hooks/queries/room/actions/useSendMessage";
-import { useChatMessages } from "@/hooks/queries/room/queries/useChatQuery";
-import { useRoomSubscription } from "@/hooks/queries/room/queries/useRoomQuery";
+import { useChatMessages } from "@/hooks/queries/room/crud/useChatQuery";
+import { useRoomSubscription } from "@/hooks/queries/room/crud/useRoomQuery";
 import { useAtomValue } from "jotai";
 import { Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

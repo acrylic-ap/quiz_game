@@ -10,13 +10,14 @@ import { getDocs, collection } from "firebase/firestore";
 import { useAuth } from "../../common/account/useAuth";
 import { get, onDisconnect, onValue, ref, remove } from "firebase/database";
 import { useRoomUsers } from "./useRoomUsers";
-import { Room } from "@/types/common/room/room";
+import { Room } from "@/types/room/room";
 
 export const useTopicMap = () => {
   return useQuery({
     queryKey: ["topicMap"],
     queryFn: async () => {
       const querySnapshot = await getDocs(collection(db, "topics"));
+
       const mapping: Record<string, string> = {};
 
       querySnapshot.forEach((doc) => {
@@ -66,8 +67,6 @@ export const useRoomSubscription = (roomId: string | undefined) => {
       return;
     }
 
-    if (!topicMap) return;
-
     const sessionRef = ref(rtdb, `room_sessions/${roomId}`);
 
     const unsubscribe = onValue(
@@ -85,7 +84,7 @@ export const useRoomSubscription = (roomId: string | undefined) => {
         const status = data.status ?? "waiting";
         const isPlaying = status === "playing";
 
-        // 대기 중인 방의 방장 이탈 확인
+        // 대기/설정 중인 방의 방장 이탈 확인
         if (!isPlaying && ownerId) {
           const ownerSessionRef = ref(
             rtdb,
@@ -110,7 +109,7 @@ export const useRoomSubscription = (roomId: string | undefined) => {
         const roomTopicMap = new Map<string, string>();
 
         topicIds.forEach((id: string) => {
-          const topicName = topicMap[id];
+          const topicName = topicMap?.[id];
 
           if (topicName) {
             roomTopicMap.set(id, topicName);

@@ -1,8 +1,8 @@
 import { showKickedModalState } from "@/atoms/modalAtom";
 import { currentRoomIdAtom } from "@/atoms/roomAtom";
 import { useAuth } from "@/hooks/queries/common/account/useAuth";
-import { useRoomSubscription } from "@/hooks/queries/room/queries/useRoomQuery";
-import { useRoomUsers } from "@/hooks/queries/room/queries/useRoomUsers";
+import { useRoomSubscription } from "@/hooks/queries/room/crud/useRoomQuery";
+import { useRoomUsers } from "@/hooks/queries/room/crud/useRoomUsers";
 import { useKicking } from "@/hooks/queries/room/session/useKicking";
 import { useAtom, useAtomValue } from "jotai";
 import { Ban, X } from "lucide-react";

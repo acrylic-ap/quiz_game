@@ -1,4 +1,4 @@
-import { TopicDecisionType } from "@/types/common/room/topic";
+import { TopicDecisionType } from "@/types/topic/topic";
 import { atom } from "jotai";
 
 // 문제 개수

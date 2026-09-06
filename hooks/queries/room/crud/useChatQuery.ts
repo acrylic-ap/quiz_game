@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { onValue, ref } from "firebase/database";
 import { rtdb } from "@/lib/firebase";
-import { Chat } from "@/types/common/room/chat";
+import { Chat } from "@/types/room/chat";
 
 export const useChatMessages = (roomId: string | undefined) => {
   const queryClient = useQueryClient();

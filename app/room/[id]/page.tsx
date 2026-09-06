@@ -2,7 +2,7 @@
 
 import KickedListModal from "@/app/room/[id]/_components/KickedListModal";
 import { Header } from "./_components/Header";
-import { Section } from "./_components/Section/Section";
+import { Section } from "./_components/section/Section";
 
 export default function RoomPage() {
   return (

@@ -1,13 +1,10 @@
 import { alertModalState, setRoomModalState } from "@/atoms/modalAtom";
 import { currentRoomIdAtom } from "@/atoms/roomAtom";
 import { useAuth } from "@/hooks/queries/common/account/useAuth";
-import { useRoomSubscription } from "@/hooks/queries/room/queries/useRoomQuery";
-import { useRoomUsers } from "@/hooks/queries/room/queries/useRoomUsers";
+import { useRoomSubscription } from "@/hooks/queries/room/crud/useRoomQuery";
+import { useRoomUsers } from "@/hooks/queries/room/crud/useRoomUsers";
 import { getDisplayTopic } from "@/utils/getDisplayTopic";
-import {
-  TOPIC_DECISION_LIST,
-  TopicDecisionType,
-} from "@/types/common/room/topic";
+import { TOPIC_DECISION_LIST, TopicDecisionType } from "@/types/topic/topic";
 import { useAtom, useAtomValue } from "jotai";
 import { Eye, EyeClosed, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";

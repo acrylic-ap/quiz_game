@@ -12,10 +12,7 @@ import { useAtom } from "jotai";
 import { Filter, Image, Music, Text } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTopicQuery } from "@/hooks/queries/room_modal/useTopicQuery";
-import {
-  TOPIC_DECISION_LIST,
-  TopicDecisionType,
-} from "@/types/common/room/topic";
+import { TOPIC_DECISION_LIST, TopicDecisionType } from "@/types/topic/topic";
 import { Button } from "@/components/ui/button";
 import {
   SelectContent,
@@ -65,17 +62,6 @@ export default function TopicModal() {
     setTopicName(e.target.value);
   };
 
-  const typeImage = (type: string) => {
-    switch (type) {
-      case "image":
-        return <Image size={21} color="#d4d4d8" />;
-      case "article":
-        return <Text size={21} color="#d4d4d8" />;
-      case "sound":
-        return <Music size={21} color="#d4d4d8" />;
-    }
-  };
-
   const chooseTopic = (id: string, name: string) => {
     setPicked((prev: Map<string, string>) => {
       const next = new Map(prev);
@@ -86,9 +72,6 @@ export default function TopicModal() {
 
   const filteredTopicList = topicList.filter((topic) => {
     if (category !== "all" && topic.category !== category) return false;
-    if (!showTypeImage && topic.type === "image") return false;
-    if (!showTypeArticle && topic.type === "article") return false;
-    if (!showTypeSound && topic.type === "sound") return false;
     if (topicName && !topic.topicName.includes(topicName)) return false;
     return true;
   });
@@ -247,9 +230,6 @@ export default function TopicModal() {
                 "
                     >
                       {room.category}
-                    </div>
-                    <div className="flex items-center mr-3">
-                      {typeImage(room.type)}
                     </div>
                   </div>
                 </div>

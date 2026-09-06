@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
-import { Topic } from "@/types/common/room/topic";
+import { Topic } from "@/types/topic/topic";
 
 const fetchTopicList = async (): Promise<Topic[]> => {
   const querySnapshot = await getDocs(collection(db, "topics"));

@@ -1,6 +1,6 @@
-import { TopicDecisionType } from "./topic";
+import { TopicDecisionType } from "../topic/topic";
 
-export type Status = "waiting" | "playing";
+export type Status = "waiting" | "setting" | "playing";
 
 export interface Room {
   id: string;
