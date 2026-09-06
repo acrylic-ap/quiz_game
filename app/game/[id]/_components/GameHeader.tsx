@@ -5,19 +5,14 @@ interface GameHeaderProps {
 
 export const GameHeader = ({ roomId, title }: GameHeaderProps) => {
   return (
-    <header className="relative h-[15%] w-full shrink-0">
-      {/* ID */}
-      <div className="absolute left-[3.75%] top-1/2 -translate-y-1/2">
+    <header className="flex h-[12%] w-full shrink-0 items-center border-b border-zinc-500">
+      <div className="flex items-center gap-8 pl-6">
+        {/* ID */}
         <span className="text-2xl font-medium text-zinc-400">{roomId}</span>
-      </div>
 
-      {/* 제목 */}
-      <div className="absolute left-[17%] top-1/2 -translate-y-1/2">
+        {/* 제목 */}
         <span className="text-2xl font-medium text-white">{title}</span>
       </div>
-
-      {/* 구분선 */}
-      <div className="absolute inset-x-0 bottom-0 h-px bg-zinc-500" />
     </header>
   );
 };
