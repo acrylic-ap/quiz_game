@@ -1,3 +1,5 @@
+"use client";
+
 import {
   QueryClient,
   queryOptions,
@@ -81,7 +83,9 @@ export const useRoomSubscription = (roomId: string | undefined) => {
         const data = snapshot.val();
 
         const ownerId = data.config?.ownerId ?? "";
+
         const status = data.status ?? "waiting";
+
         const isPlaying = status === "playing";
 
         // 대기/설정 중인 방의 방장 이탈 확인
@@ -101,7 +105,6 @@ export const useRoomSubscription = (roomId: string | undefined) => {
           }
         }
 
-        // 저장된 topic ID → 화면 표시용 Map
         const topicIds = data.gameConfig?.topic
           ? data.gameConfig.topic.split(", ")
           : [];
@@ -133,13 +136,29 @@ export const useRoomSubscription = (roomId: string | undefined) => {
 
           gameConfig: {
             lastRound: data.gameConfig?.lastRound ?? 0,
+
             topic: roomTopicMap,
+
             decision: data.gameConfig?.decision ?? "random",
+
             rankBasis: data.gameConfig?.rankBasis ?? "count",
+          },
+
+          game: {
+            status: data.game?.status ?? "waiting",
+
+            currentRound: data.game?.currentRound ?? 0,
+
+            selectedTopicId: data.game?.selectedTopicId ?? undefined,
+
+            questionList: data.game?.questionList ?? [],
+
+            topicVotes: data.game?.topicVotes ?? {},
+
+            joinReady: data.game?.joinReady ?? {},
           },
         };
 
-        // 브라우저 종료 시 방/사용자 정리
         if (user?.uid) {
           const myEntryRef = ref(
             rtdb,
@@ -175,7 +194,7 @@ export const useRoomSubscription = (roomId: string | undefined) => {
     );
 
     return () => unsubscribe();
-  }, [roomId, topicMap, queryClient, user?.uid]);
+  }, [roomId, topicMap, queryClient, user?.uid, users]);
 
   const queryResult = useQuery<Room | null>({
     queryKey,

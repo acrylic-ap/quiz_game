@@ -1,23 +1,8 @@
-import { TopicDecisionType } from "../topic/topic";
+import { Game } from "@/types/game/game";
 
-export type Status = "waiting" | "setting" | "playing";
+export type RoomStatus = "waiting" | "setting" | "playing";
 
-export interface Room {
-  id: string;
-  config: Config;
-  status: Status;
-  users: RoomUser[];
-  gameConfig: GameConfig;
-}
-
-export interface RoomUser {
-  id: string;
-  nickname: string;
-  isReady: boolean;
-  avatar?: string;
-}
-
-export interface Config {
+export interface RoomConfig {
   roomName: string;
   capacity: number;
   maxCapacity: number;
@@ -25,11 +10,24 @@ export interface Config {
   ownerId: string;
 }
 
-export type RankBasis = "count" | "time";
-
-export interface GameConfig {
+export interface RoomGameConfig {
   lastRound: number;
   topic: Map<string, string>;
-  decision: TopicDecisionType;
-  rankBasis: RankBasis;
+  decision: "random" | "vote" | "always_random";
+  rankBasis: "count";
+}
+
+export interface RoomUser {
+  id: string;
+  nickname: string;
+  isReady: boolean;
+}
+
+export interface Room {
+  id: string;
+  config: RoomConfig;
+  status: RoomStatus;
+  users: RoomUser[];
+  gameConfig: RoomGameConfig;
+  game: Game;
 }

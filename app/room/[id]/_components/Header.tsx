@@ -13,6 +13,7 @@ export const Header = () => {
   const router = useRouter();
 
   const { data: roomData } = useRoomSubscription(roomId);
+
   const { data: user } = useAuth();
 
   const { confirmAndExit } = useRoomExitActions(roomId, user?.uid);
@@ -22,7 +23,9 @@ export const Header = () => {
   const isSetting = roomData?.status === "setting";
 
   const handleExit = () => {
-    if (!user || isSetting) return;
+    if (!user || isSetting) {
+      return;
+    }
 
     confirmAndExit(user.uid === roomData?.config.ownerId, () =>
       router.replace("/"),
@@ -31,12 +34,16 @@ export const Header = () => {
 
   return (
     <header
-      className="sticky top-0 z-50 flex h-20 w-full
-      items-center justify-between
-      border-b border-zinc-800
-      bg-zinc-950/80 px-6
-      shadow-lg shadow-black/20
-      backdrop-blur-sm"
+      className="
+        sticky top-0 z-50
+        flex h-20 w-full
+        items-center justify-between
+        border-b border-zinc-800
+        bg-zinc-950/80
+        px-6
+        shadow-lg shadow-black/20
+        backdrop-blur-sm
+      "
     >
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-bold tracking-tight">
@@ -46,15 +53,20 @@ export const Header = () => {
       </div>
 
       <button
-        className="rounded-xl text-lg font-semibold transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+        className="
+          rounded-xl
+          text-lg font-semibold
+          transition
+          active:scale-95
+          disabled:cursor-not-allowed
+          disabled:opacity-40
+        "
         onClick={handleExit}
         disabled={isSetting}
       >
         <SquareArrowRightExit
           size={25}
-          className={
-            isSetting ? "text-zinc-600" : "text-white hover:text-red-500"
-          }
+          className="text-white hover:text-red-500"
         />
       </button>
     </header>

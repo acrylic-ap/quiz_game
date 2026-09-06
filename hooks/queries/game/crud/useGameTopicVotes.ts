@@ -8,35 +8,32 @@ import { useEffect } from "react";
 
 import { rtdb } from "@/lib/firebase";
 
-interface JoinReadyUser {
-  ready: boolean;
+export interface TopicVote {
+  topicId: string;
 }
 
-export const useGameJoinReadyQuery = (roomId: string | undefined) => {
+export const useGameTopicVotes = (roomId: string | undefined) => {
   const queryClient = useQueryClient();
 
-  const queryKey = ["game_join_ready", roomId];
+  const queryKey = ["game_topic_votes", roomId];
 
   useEffect(() => {
     if (!roomId) {
       return;
     }
 
-    const joinReadyRef = ref(rtdb, `room_sessions/${roomId}/game/joinReady`);
+    const votesRef = ref(rtdb, `room_sessions/${roomId}/game/topicVotes`);
 
-    const unsubscribe = onValue(joinReadyRef, (snapshot) => {
+    const unsubscribe = onValue(votesRef, (snapshot) => {
       const data = snapshot.val();
 
-      queryClient.setQueryData<Record<string, JoinReadyUser>>(
-        queryKey,
-        data ?? {},
-      );
+      queryClient.setQueryData<Record<string, TopicVote>>(queryKey, data ?? {});
     });
 
     return unsubscribe;
   }, [roomId, queryClient]);
 
-  return useQuery<Record<string, JoinReadyUser>>({
+  return useQuery<Record<string, TopicVote>>({
     queryKey,
 
     queryFn: () => ({}),

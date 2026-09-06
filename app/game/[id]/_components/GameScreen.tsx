@@ -1,51 +1,79 @@
 import { GameHeader } from "./GameHeader";
+import { GameStartWatcher } from "./GameStartWatcher";
+import { GameTopicRandomPanel } from "./GameTopicRandomPanel";
+import { GameTopicVotePanel } from "./GameTopicVotePanel";
+
+interface GameUser {
+  id: string;
+}
 
 interface GameScreenProps {
   roomId: string;
   title: string;
   allUsersReady: boolean;
+  isOwner: boolean;
+  userId: string | undefined;
+  users: GameUser[];
+  decision: "random" | "vote" | "always_random";
+  lastRound: number;
+  topicIds: string[];
+  topicNames: Record<string, string>;
 }
 
 export const GameScreen = ({
   roomId,
   title,
   allUsersReady,
+  isOwner,
+  userId,
+  users,
+  decision,
+  lastRound,
+  topicIds,
+  topicNames,
 }: GameScreenProps) => {
   return (
-    <div className="flex h-full w-full flex-col bg-[#09090B]">
+    <section className="flex h-full w-full flex-col">
       <GameHeader roomId={roomId} title={title} />
 
-      {/* 게임 영역 */}
-      <main className="relative flex-1">
-        {/* 실제 게임 영역 */}
-        <div
-          className="
-            absolute
-            left-[2.71%]
-            top-[10.75%]
-            h-[74.07%]
-            w-[65.73%]
-            bg-[#09090B]
-          "
-        />
-
-        {/* 입장 대기 */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          {allUsersReady ? (
-            <span className="text-6xl font-bold text-white">성공!</span>
-          ) : (
-            <div className="text-center">
-              <p className="text-3xl font-bold text-white">
-                게임에 입장하는 중...
-              </p>
-
-              <p className="mt-3 text-lg text-zinc-500">
-                모든 참가자를 기다리고 있습니다
-              </p>
+      <div className="flex min-h-0 flex-1">
+        {!allUsersReady ? (
+          <div className="flex flex-1 items-center justify-center">
+            <div className="text-2xl text-zinc-400">
+              플레이어 입장을 기다리는 중...
             </div>
-          )}
-        </div>
-      </main>
-    </div>
+          </div>
+        ) : (
+          <>
+            {decision === "random" ? (
+              <GameTopicRandomPanel
+                roomId={roomId}
+                isOwner={isOwner}
+                topicIds={topicIds}
+                topicNames={topicNames}
+                decision={decision}
+              />
+            ) : (
+              <GameTopicVotePanel
+                roomId={roomId}
+                userId={userId}
+                users={users}
+                topicIds={topicIds}
+                topicNames={topicNames}
+                decision={decision}
+              />
+            )}
+            <GameStartWatcher
+              roomId={roomId}
+              isOwner={isOwner}
+              decision={decision}
+              lastRound={lastRound}
+              topicIds={topicIds}
+              users={users}
+            />
+          </>
+        )}
+      </div>
+    </section>
   );
 };

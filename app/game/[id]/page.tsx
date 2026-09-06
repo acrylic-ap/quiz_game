@@ -1,17 +1,22 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+
 import { useParams } from "next/navigation";
 
 import { useAuth } from "@/hooks/queries/common/account/useAuth";
+
 import { useRoomSubscription } from "@/hooks/queries/room/crud/useRoomQuery";
-import { useGameJoinReady } from "@/hooks/queries/room/actions/useGameJoinReady";
-import { useGameJoinReadyQuery } from "@/hooks/queries/room/crud/useGameJoinReadyQuery";
+
+import { useGameJoinReady } from "@/hooks/queries/game/actions/useGameJoinReady";
+
+import { useGameJoinReadyQuery } from "@/hooks/queries/game/crud/useGameJoinReadyQuery";
 
 import { GameScreen } from "./_components/GameScreen";
 
 export default function GamePage() {
   const params = useParams();
+
   const roomId = params.id as string;
 
   const { data: user } = useAuth();
@@ -22,7 +27,6 @@ export default function GamePage() {
 
   const { data: joinReadyUsers = {} } = useGameJoinReadyQuery(roomId);
 
-  // 실제 방에 남아 있는 모든 유저
   const users = roomData?.users ?? [];
 
   const allUsersReady = useMemo(() => {
@@ -35,21 +39,27 @@ export default function GamePage() {
     );
   }, [users, joinReadyUsers]);
 
-  // GamePage 입장 완료 처리
-  useEffect(() => {
-    if (!user?.uid) return;
+  const isOwner = roomData?.config.ownerId === user?.uid;
 
-    console.log("[Game] mounted:", roomId);
-    console.log("[Game] joinReady:", user.uid);
+  useEffect(() => {
+    if (!user?.uid) {
+      return;
+    }
+
+    if (roomData?.status !== "playing") {
+      return;
+    }
 
     joinReady();
-  }, [roomId, user?.uid, joinReady]);
+  }, [roomData?.status, user?.uid, joinReady]);
 
-  useEffect(() => {
-    console.log("[Game] 입장 현황:", joinReadyUsers);
+  const decision = roomData?.gameConfig?.decision ?? "random";
 
-    console.log("[Game] 전체 입장 완료:", allUsersReady);
-  }, [joinReadyUsers, allUsersReady]);
+  const lastRound = roomData?.gameConfig?.lastRound ?? 60;
+
+  const topicIds = Array.from(roomData?.gameConfig?.topic.keys() ?? []);
+
+  const topicNames = Object.fromEntries(roomData?.gameConfig?.topic ?? []);
 
   return (
     <main className="h-screen w-full overflow-hidden bg-[#09090B] text-white">
@@ -57,6 +67,13 @@ export default function GamePage() {
         roomId={roomId}
         title={roomData?.config.roomName ?? ""}
         allUsersReady={allUsersReady}
+        isOwner={isOwner}
+        userId={user?.uid}
+        users={users}
+        decision={decision}
+        lastRound={lastRound}
+        topicIds={topicIds}
+        topicNames={topicNames}
       />
     </main>
   );

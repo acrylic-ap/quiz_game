@@ -2,13 +2,14 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ref, update } from "firebase/database";
+
 import { rtdb } from "@/lib/firebase";
 
-export const useGameStart = (roomId: string | undefined) => {
+export const useRoomStatus = (roomId: string | undefined) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (status: "waiting" | "setting" | "playing") => {
       if (!roomId) {
         throw new Error("방 아이디가 없습니다.");
       }
@@ -16,7 +17,7 @@ export const useGameStart = (roomId: string | undefined) => {
       const roomRef = ref(rtdb, `room_sessions/${roomId}`);
 
       await update(roomRef, {
-        status: "setting",
+        status,
       });
     },
 

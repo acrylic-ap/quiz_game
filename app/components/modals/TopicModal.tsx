@@ -1,6 +1,7 @@
 "use client";
 
 import { showTopicModalState } from "@/atoms/modalAtom";
+import { topicDecisionAtom } from "@/atoms/roomFormAtom";
 import { pickedTopicAtom } from "@/atoms/topicAtom";
 import {
   Dialog,
@@ -36,7 +37,7 @@ export default function TopicModal() {
   const [category, setCategory] = useState("all");
   const [topicName, setTopicName] = useState("");
 
-  const [decision, setDecision] = useState<TopicDecisionType>("vote");
+  const [decision, setDecision] = useAtom(topicDecisionAtom);
   const [showTopicInfo, setShowTopicInfo] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -195,7 +196,7 @@ export default function TopicModal() {
                 </div>
                 <div className="flex gap-1">
                   <h3 className="text-zinc-300">항시 랜덤</h3>
-                  <p>매 라운드마다 무작위 변경</p>
+                  <p>선택된 주제의 문제를 무작위로 구성</p>
                 </div>
               </div>
             )}
