@@ -3,6 +3,7 @@
 import { useGamePlayActions } from "@/hooks/queries/game/actions/useGamePlayActions";
 
 import { FinalView } from "./game_play/FinalView";
+import { QuestionStartCountdown } from "./game_play/QuestionStartCountdown";
 import { QuestionView } from "./game_play/QuestionView";
 import { RankingPopup } from "./game_play/RankingPopup";
 import { RankingView } from "./game_play/RankingView";
@@ -30,8 +31,6 @@ export const GamePlay = ({
     );
   }
 
-  const showRankingPopup = game.phase === "question" || game.phase === "result";
-
   return (
     <div className="relative flex min-h-0 flex-1">
       <GameRoundHostWatcher
@@ -49,14 +48,27 @@ export const GamePlay = ({
       )}
 
       {game.phase === "question" && (
-        <QuestionView
+        <QuestionStartCountdown
           key={game.currentRound}
-          roomId={roomId}
-          userId={userId}
-          users={users}
-          game={game}
-          question={question}
-        />
+          currentRound={game.currentRound}
+        >
+          <QuestionView
+            roomId={roomId}
+            userId={userId}
+            users={users}
+            game={game}
+            question={question}
+          />
+
+          <div
+            className="
+              absolute right-6 top-1/2 z-30
+              -translate-y-1/2
+            "
+          >
+            <RankingPopup userId={userId} users={users} game={game} />
+          </div>
+        </QuestionStartCountdown>
       )}
 
       {game.phase === "result" && (
@@ -90,7 +102,7 @@ export const GamePlay = ({
         />
       )}
 
-      {showRankingPopup && (
+      {game.phase === "result" && (
         <div
           className="
             absolute right-6 top-1/2 z-30
