@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import { useAuth } from "@/hooks/queries/common/account/useAuth";
 
@@ -16,6 +16,7 @@ import { GameScreen } from "./_components/GameScreen";
 
 export default function GamePage() {
   const params = useParams();
+  const router = useRouter();
 
   const roomId = params.id as string;
 
@@ -27,7 +28,7 @@ export default function GamePage() {
 
   const { data: joinReadyUsers = {} } = useGameJoinReadyQuery(roomId);
 
-  const users = roomData?.users ?? [];
+  const users = useMemo(() => roomData?.users ?? [], [roomData?.users]);
 
   const allUsersReady = useMemo(() => {
     if (users.length === 0) {
@@ -52,6 +53,12 @@ export default function GamePage() {
 
     joinReady();
   }, [roomData?.status, user?.uid, joinReady]);
+
+  useEffect(() => {
+    if (roomData?.status === "waiting") {
+      router.replace(`/room/${roomId}`);
+    }
+  }, [roomData?.status, roomId, router]);
 
   const decision = roomData?.gameConfig?.decision ?? "random";
 

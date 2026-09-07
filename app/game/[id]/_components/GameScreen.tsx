@@ -3,9 +3,12 @@ import { GameStartWatcher } from "./GameStartWatcher";
 import { GameTopicRandomPanel } from "./GameTopicRandomPanel";
 import { GameTopicVotePanel } from "./GameTopicVotePanel";
 import { useGameTopicVoteTimer } from "@/hooks/queries/game/crud/useGameTopicVoteTimer";
+import { useGameSubscription } from "@/hooks/queries/game/session/useGameSubscription";
+import { GamePlay } from "./GamePlay";
 
 interface GameUser {
   id: string;
+  nickname: string;
 }
 
 interface GameScreenProps {
@@ -39,6 +42,7 @@ export const GameScreen = ({
 }: GameScreenProps) => {
   const { startedAt: topicVoteStartedAt, serverTimeOffset } =
     useGameTopicVoteTimer(roomId);
+  const { data: game } = useGameSubscription(roomId);
 
   return (
     <section className="flex h-full w-full flex-col">
@@ -51,6 +55,15 @@ export const GameScreen = ({
               플레이어 입장을 기다리는 중...
             </div>
           </div>
+        ) : game?.status === "playing" ? (
+          <GamePlay
+            roomId={roomId}
+            userId={userId}
+            isOwner={isOwner}
+            users={users}
+            game={game}
+            serverTimeOffset={serverTimeOffset}
+          />
         ) : (
           <>
             {decision === "random" ? (

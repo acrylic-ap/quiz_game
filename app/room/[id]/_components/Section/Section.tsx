@@ -53,10 +53,20 @@ export const Section = () => {
       return;
     }
 
+    if (user?.uid && roomData.game.finalReturnReady?.[user.uid] === true) {
+      return;
+    }
+
     console.log("[Room] 게임 페이지 이동:", `/game/${roomId}`);
 
     router.replace(`/game/${roomId}`);
-  }, [roomData?.status, roomId, router]);
+  }, [
+    roomData?.status,
+    roomData?.game.finalReturnReady,
+    roomId,
+    router,
+    user?.uid,
+  ]);
 
   const handleStartGame = () => {
     if (users.length <= 1) {

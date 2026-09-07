@@ -16,6 +16,8 @@ export const useGameStatus = (roomId: string | undefined) => {
 
       await update(gameRef, {
         status,
+        currentRound: 0,
+        phase: "question",
       });
     },
   });

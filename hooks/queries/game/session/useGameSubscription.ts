@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { onValue, ref } from "firebase/database";
 import { rtdb } from "@/lib/firebase";
@@ -9,7 +9,7 @@ import { Game } from "@/types/game/game";
 export const useGameSubscription = (roomId: string | undefined) => {
   const queryClient = useQueryClient();
 
-  const queryKey = ["game", roomId];
+  const queryKey = useMemo(() => ["game", roomId], [roomId]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -25,11 +25,20 @@ export const useGameSubscription = (roomId: string | undefined) => {
       const data = snapshot.val();
 
       queryClient.setQueryData<Game>(queryKey, {
+        status: data.status ?? "waiting",
+        phase: data.phase,
         currentRound: data.currentRound ?? 0,
+        selectedTopicId: data.selectedTopicId,
         questionList: data.questionList ?? [],
+        topicVotes: data.topicVotes ?? {},
+        topicVoteStartedAt: data.topicVoteStartedAt,
+        joinReady: data.joinReady ?? {},
+        round: data.round,
+        ranking: data.ranking ?? {},
+        finalReturnReady: data.finalReturnReady ?? {},
       });
     });
-  }, [roomId, queryClient]);
+  }, [roomId, queryClient, queryKey]);
 
   return useQuery<Game | null>({
     queryKey,

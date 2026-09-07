@@ -171,6 +171,8 @@ export const useRoomSubscription = (roomId: string | undefined) => {
             topicVotes: data.game?.topicVotes ?? {},
 
             joinReady: data.game?.joinReady ?? {},
+
+            finalReturnReady: data.game?.finalReturnReady ?? {},
           },
         };
 
