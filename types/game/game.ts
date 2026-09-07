@@ -16,5 +16,6 @@ export interface Game {
   selectedTopicId?: string;
   questionList: Question[];
   topicVotes?: Record<string, TopicVote>;
+  topicVoteStartedAt?: number;
   joinReady?: Record<string, JoinReady>;
 }

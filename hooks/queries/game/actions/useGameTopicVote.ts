@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { get, ref, update } from "firebase/database";
+import { ref, runTransaction, serverTimestamp } from "firebase/database";
 
 import { rtdb } from "@/lib/firebase";
 
@@ -23,20 +23,26 @@ export const useGameTopicVote = (
         throw new Error("주제가 없습니다.");
       }
 
-      const voteRef = ref(
-        rtdb,
-        `room_sessions/${roomId}/game/topicVotes/${userId}`,
-      );
+      const gameRef = ref(rtdb, `room_sessions/${roomId}/game`);
 
-      const existingVote = await get(voteRef);
+      const result = await runTransaction(gameRef, (game) => {
+        if (!game || game.selectedTopicId) {
+          return;
+        }
 
-      if (existingVote.exists()) {
-        throw new Error("이미 투표했습니다.");
-      }
-
-      await update(voteRef, {
-        topicId,
+        return {
+          ...game,
+          topicVotes: {
+            ...game.topicVotes,
+            [userId]: { topicId },
+          },
+          topicVoteStartedAt: game.topicVoteStartedAt ?? serverTimestamp(),
+        };
       });
+
+      if (!result.committed) {
+        throw new Error("투표가 종료되었습니다.");
+      }
     },
   });
 };

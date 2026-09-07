@@ -23,6 +23,8 @@ interface GameStartWatcherProps {
   lastRound: number;
   topicIds: string[];
   users: GameUser[];
+  topicVoteStartedAt: number | null;
+  serverTimeOffset: number;
 }
 
 export const GameStartWatcher = ({
@@ -32,6 +34,8 @@ export const GameStartWatcher = ({
   lastRound,
   topicIds,
   users,
+  topicVoteStartedAt,
+  serverTimeOffset,
 }: GameStartWatcherProps) => {
   const { data: questionList = [] } = useGameQuestionListQuery(roomId);
 
@@ -126,25 +130,49 @@ export const GameStartWatcher = ({
     if (
       decision !== "vote" ||
       topicIds.length < 2 ||
+      !topicVoteStartedAt ||
       !allUsersVoted
     ) {
       return;
     }
 
     resolveVote();
-  }, [allUsersVoted, decision, resolveVote, topicIds.length]);
+  }, [
+    allUsersVoted,
+    decision,
+    resolveVote,
+    topicIds.length,
+    topicVoteStartedAt,
+  ]);
 
   useEffect(() => {
-    if (decision !== "vote" || topicIds.length < 2 || selectedTopicId) {
+    if (
+      decision !== "vote" ||
+      topicIds.length < 2 ||
+      !topicVoteStartedAt ||
+      selectedTopicId
+    ) {
       return;
     }
 
-    const timer = window.setTimeout(resolveVote, 10_000);
+    const remainingTime = Math.max(
+      0,
+      topicVoteStartedAt + 10_000 - (Date.now() + serverTimeOffset),
+    );
+
+    const timer = window.setTimeout(resolveVote, remainingTime);
 
     return () => {
       window.clearTimeout(timer);
     };
-  }, [decision, resolveVote, selectedTopicId, topicIds.length]);
+  }, [
+    decision,
+    resolveVote,
+    selectedTopicId,
+    serverTimeOffset,
+    topicIds.length,
+    topicVoteStartedAt,
+  ]);
 
   useEffect(() => {
     if (!isOwner || !availableTopicId) {

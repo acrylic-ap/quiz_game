@@ -2,6 +2,7 @@ import { GameHeader } from "./GameHeader";
 import { GameStartWatcher } from "./GameStartWatcher";
 import { GameTopicRandomPanel } from "./GameTopicRandomPanel";
 import { GameTopicVotePanel } from "./GameTopicVotePanel";
+import { useGameTopicVoteTimer } from "@/hooks/queries/game/crud/useGameTopicVoteTimer";
 
 interface GameUser {
   id: string;
@@ -32,6 +33,9 @@ export const GameScreen = ({
   topicIds,
   topicNames,
 }: GameScreenProps) => {
+  const { startedAt: topicVoteStartedAt, serverTimeOffset } =
+    useGameTopicVoteTimer(roomId);
+
   return (
     <section className="flex h-full w-full flex-col">
       <GameHeader roomId={roomId} title={title} />
@@ -61,6 +65,8 @@ export const GameScreen = ({
                 topicIds={topicIds}
                 topicNames={topicNames}
                 decision={decision}
+                topicVoteStartedAt={topicVoteStartedAt}
+                serverTimeOffset={serverTimeOffset}
               />
             )}
             <GameStartWatcher
@@ -70,6 +76,8 @@ export const GameScreen = ({
               lastRound={lastRound}
               topicIds={topicIds}
               users={users}
+              topicVoteStartedAt={topicVoteStartedAt}
+              serverTimeOffset={serverTimeOffset}
             />
           </>
         )}
