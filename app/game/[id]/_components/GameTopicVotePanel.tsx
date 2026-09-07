@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useGameTopicVote } from "@/hooks/queries/game/actions/useGameTopicVote";
 import { useGameSelectedTopic } from "@/hooks/queries/game/crud/useGameSelectedTopic";
 import { useGameTopicVotes } from "@/hooks/queries/game/crud/useGameTopicVotes";
+import { countTopicVotes, getWinningTopicIds } from "@/utils/topic";
 
 interface GameUser {
   id: string;
@@ -42,6 +43,43 @@ export const GameTopicVotePanel = ({
   const { mutate: voteForTopic, isPending } = useGameTopicVote(roomId, userId);
 
   const [now, setNow] = useState(() => Date.now());
+  const [tieActiveIndex, setTieActiveIndex] = useState(0);
+
+  const winningTopicIds = useMemo(() => {
+    const validVotes = Object.fromEntries(
+      Object.entries(topicVotes).filter(([, vote]) =>
+        topicIds.includes(vote.topicId),
+      ),
+    );
+    const voteCount = countTopicVotes(validVotes);
+
+    topicIds.forEach((topicId) => {
+      voteCount[topicId] ??= 0;
+    });
+
+    return getWinningTopicIds(voteCount);
+  }, [topicIds, topicVotes]);
+
+  const allUsersVoted =
+    users.length > 0 &&
+    users.every((user) => topicVotes[user.id]?.topicId !== undefined);
+
+  const remainingSeconds = topicVoteStartedAt
+    ? Math.min(
+        10,
+        Math.max(
+          0,
+          Math.ceil(
+            (topicVoteStartedAt + 10_000 - (now + serverTimeOffset)) / 1_000,
+          ),
+        ),
+      )
+    : null;
+
+  const votingEnded =
+    !!topicVoteStartedAt && (allUsersVoted || remainingSeconds === 0);
+  const isTieBreakAnimating =
+    votingEnded && winningTopicIds.length > 1 && !selectedTopicId;
 
   useEffect(() => {
     if (!topicVoteStartedAt || selectedTopicId) {
@@ -57,43 +95,58 @@ export const GameTopicVotePanel = ({
     };
   }, [selectedTopicId, topicVoteStartedAt]);
 
-  if (decision !== "vote" || topicIds.length < 2 || selectedTopicId) {
+  useEffect(() => {
+    if (!isTieBreakAnimating) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setTieActiveIndex(
+        (currentIndex) => (currentIndex + 1) % winningTopicIds.length,
+      );
+    }, 160);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [isTieBreakAnimating, winningTopicIds.length]);
+
+  if (decision !== "vote" || topicIds.length < 2) {
     return null;
   }
 
   const selectedVoteTopicId = userId ? topicVotes[userId]?.topicId : undefined;
-
-  const remainingSeconds = topicVoteStartedAt
-    ? Math.min(
-        10,
-        Math.max(
-          0,
-          Math.ceil(
-            (topicVoteStartedAt + 10_000 - (now + serverTimeOffset)) / 1_000,
-          ),
-        ),
-      )
-    : null;
+  const animatedTopicId = isTieBreakAnimating
+    ? winningTopicIds[tieActiveIndex % winningTopicIds.length]
+    : undefined;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col justify-center">
       <div className="flex w-full flex-col items-start ml-10">
         <div className="flex items-center gap-4 ml-3">
           <p className="text-[24px] font-semibold text-zinc-100">
-            주제를 선택하세요
+            {selectedTopicId
+              ? "선택된 주제"
+              : isTieBreakAnimating
+                ? "동률 주제를 랜덤으로 고르는 중..."
+                : votingEnded
+                  ? "선택된 주제를 확인하는 중..."
+                  : "주제를 선택하세요"}
           </p>
 
-          <span
-            className="
-          bg-zinc-900 px-3 py-1
-          rounded-md
-          text-sm text-zinc-400
-        "
-          >
-            {remainingSeconds === null
-              ? "투표 대기 중"
-              : `${remainingSeconds}초`}
-          </span>
+          {!votingEnded && !selectedTopicId && (
+            <span
+              className="
+            bg-zinc-900 px-3 py-1
+            rounded-md
+            text-sm text-zinc-400
+          "
+            >
+              {remainingSeconds === null
+                ? "투표 대기 중"
+                : `${remainingSeconds}초`}
+            </span>
+          )}
         </div>
 
         <div className="mt-12 w-full overflow-x-auto">
@@ -104,19 +157,26 @@ export const GameTopicVotePanel = ({
               );
 
               const isSelected = selectedVoteTopicId === topicId;
+              const isActive = selectedTopicId
+                ? selectedTopicId === topicId
+                : isTieBreakAnimating
+                  ? animatedTopicId === topicId
+                  : isSelected;
 
               return (
                 <button
                   key={topicId}
                   type="button"
-                  disabled={isPending || isSelected}
+                  disabled={
+                    isPending || isSelected || votingEnded || !!selectedTopicId
+                  }
                   onClick={() => voteForTopic(topicId)}
                   className={`
                 group relative flex h-[240px] w-[232px] shrink-0 flex-col overflow-hidden bg-zinc-950 text-left
                 rounded-[7px] border-2
                 transition
                 ${
-                  isSelected
+                  isActive
                     ? "border-zinc-400"
                     : "border-zinc-700 hover:border-zinc-500"
                 }

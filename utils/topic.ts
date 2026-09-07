@@ -29,18 +29,28 @@ export const countTopicVotes = (
   return voteCount;
 };
 
-export const getWinningTopicId = (
+export const VOTE_TIE_BREAK_DURATION_MS = 3_000;
+
+export const getWinningTopicIds = (
   voteCount: Record<string, number>,
-): string | null => {
+): string[] => {
   const entries = Object.entries(voteCount);
 
   if (entries.length === 0) {
-    return null;
+    return [];
   }
 
   const maxVotes = Math.max(...entries.map(([, count]) => count));
 
-  const winners = entries.filter(([, count]) => count === maxVotes);
+  return entries
+    .filter(([, count]) => count === maxVotes)
+    .map(([topicId]) => topicId);
+};
+
+export const getWinningTopicId = (
+  voteCount: Record<string, number>,
+): string | null => {
+  const winners = getWinningTopicIds(voteCount);
 
   if (winners.length === 0) {
     return null;
@@ -48,5 +58,5 @@ export const getWinningTopicId = (
 
   const randomIndex = Math.floor(Math.random() * winners.length);
 
-  return winners[randomIndex][0];
+  return winners[randomIndex];
 };

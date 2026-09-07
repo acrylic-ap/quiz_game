@@ -2,6 +2,8 @@ import { Game } from "@/types/game/game";
 
 export type RoomStatus = "waiting" | "setting" | "playing";
 
+export type RankBasis = "count" | "time";
+
 export interface RoomConfig {
   roomName: string;
   capacity: number;
@@ -16,7 +18,7 @@ export interface RoomGameConfig {
   topicDescriptions: Map<string, string>;
   topicCategories: Map<string, string>;
   decision: "random" | "vote" | "always_random";
-  rankBasis: "count";
+  rankBasis: RankBasis;
 }
 
 export interface RoomUser {

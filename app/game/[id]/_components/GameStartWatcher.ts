@@ -10,7 +10,11 @@ import { useGameSelectedTopic } from "@/hooks/queries/game/crud/useGameSelectedT
 import { useGameTopicVotes } from "@/hooks/queries/game/crud/useGameTopicVotes";
 import { useTopicQuestions } from "@/hooks/queries/topic/crud/useTopicQuestions";
 import { shuffle } from "@/utils/random";
-import { countTopicVotes, getWinningTopicId } from "@/utils/topic";
+import {
+  VOTE_TIE_BREAK_DURATION_MS,
+  countTopicVotes,
+  getWinningTopicIds,
+} from "@/utils/topic";
 
 interface GameUser {
   id: string;
@@ -64,6 +68,16 @@ export const GameStartWatcher = ({
 
   const savingQuestionList = useRef(false);
 
+  const voteResolutionTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (voteResolutionTimer.current !== null) {
+        window.clearTimeout(voteResolutionTimer.current);
+      }
+    };
+  }, []);
+
   const resolveVote = useCallback(() => {
     if (!isOwner || selectedTopicId || selectingTopic.current) {
       return;
@@ -81,19 +95,36 @@ export const GameStartWatcher = ({
       voteCount[topicId] ??= 0;
     });
 
-    const winningTopicId = getWinningTopicId(voteCount);
+    const winningTopicIds = getWinningTopicIds(voteCount);
 
-    if (!winningTopicId) {
+    if (winningTopicIds.length === 0) {
       return;
     }
 
     selectingTopic.current = true;
 
-    selectTopic(winningTopicId, {
-      onError: () => {
-        selectingTopic.current = false;
-      },
-    });
+    const selectWinningTopic = () => {
+      const winningTopicId =
+        winningTopicIds.length === 1
+          ? winningTopicIds[0]
+          : shuffle(winningTopicIds)[0];
+
+      selectTopic(winningTopicId, {
+        onError: () => {
+          selectingTopic.current = false;
+        },
+      });
+    };
+
+    if (winningTopicIds.length === 1) {
+      selectWinningTopic();
+      return;
+    }
+
+    voteResolutionTimer.current = window.setTimeout(
+      selectWinningTopic,
+      VOTE_TIE_BREAK_DURATION_MS,
+    );
   }, [isOwner, selectedTopicId, selectTopic, topicIds, topicVotes]);
 
   useEffect(() => {
