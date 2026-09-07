@@ -16,6 +16,8 @@ interface GameTopicVotePanelProps {
   users: GameUser[];
   topicIds: string[];
   topicNames: Record<string, string>;
+  topicDescriptions: Record<string, string>;
+  topicCategories: Record<string, string>;
   decision: "random" | "vote" | "always_random";
   topicVoteStartedAt: number | null;
   serverTimeOffset: number;
@@ -27,6 +29,8 @@ export const GameTopicVotePanel = ({
   users,
   topicIds,
   topicNames,
+  topicDescriptions,
+  topicCategories,
   decision,
   topicVoteStartedAt,
   serverTimeOffset,
@@ -134,7 +138,7 @@ export const GameTopicVotePanel = ({
                       text-sm font-medium text-zinc-200
                     "
                       >
-                        주제
+                        {topicCategories[topicId] ?? ""}
                       </div>
                     </div>
 
@@ -144,7 +148,7 @@ export const GameTopicVotePanel = ({
                       </p>
 
                       <p className="mt-2 text-sm text-zinc-300">
-                        주제를 선택해 주세요
+                        {topicDescriptions[topicId] ?? ""}
                       </p>
                     </div>
 

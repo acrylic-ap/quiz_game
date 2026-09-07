@@ -16,17 +16,24 @@ import { Room } from "@/types/room/room";
 
 export const useTopicMap = () => {
   return useQuery({
-    queryKey: ["topicMap"],
+    queryKey: ["roomTopicDetails"],
     queryFn: async () => {
       const querySnapshot = await getDocs(collection(db, "topics"));
 
-      const mapping: Record<string, string> = {};
+      const mapping: Record<
+        string,
+        { topicName: string; description: string; category: string }
+      > = {};
 
       querySnapshot.forEach((doc) => {
         const data = doc.data();
 
         if (data.topicName) {
-          mapping[doc.id] = data.topicName;
+          mapping[doc.id] = {
+            topicName: data.topicName,
+            description: data.description ?? "",
+            category: data.category ?? "",
+          };
         }
       });
 
@@ -110,12 +117,16 @@ export const useRoomSubscription = (roomId: string | undefined) => {
           : [];
 
         const roomTopicMap = new Map<string, string>();
+        const roomTopicDescriptionMap = new Map<string, string>();
+        const roomTopicCategoryMap = new Map<string, string>();
 
         topicIds.forEach((id: string) => {
-          const topicName = topicMap?.[id];
+          const topic = topicMap?.[id];
 
-          if (topicName) {
-            roomTopicMap.set(id, topicName);
+          if (topic) {
+            roomTopicMap.set(id, topic.topicName);
+            roomTopicDescriptionMap.set(id, topic.description);
+            roomTopicCategoryMap.set(id, topic.category);
           }
         });
 
@@ -138,6 +149,10 @@ export const useRoomSubscription = (roomId: string | undefined) => {
             lastRound: data.gameConfig?.lastRound ?? 0,
 
             topic: roomTopicMap,
+
+            topicDescriptions: roomTopicDescriptionMap,
+
+            topicCategories: roomTopicCategoryMap,
 
             decision: data.gameConfig?.decision ?? "random",
 

@@ -61,6 +61,14 @@ export default function GamePage() {
 
   const topicNames = Object.fromEntries(roomData?.gameConfig?.topic ?? []);
 
+  const topicDescriptions = Object.fromEntries(
+    roomData?.gameConfig?.topicDescriptions ?? [],
+  );
+
+  const topicCategories = Object.fromEntries(
+    roomData?.gameConfig?.topicCategories ?? [],
+  );
+
   return (
     <main className="h-screen w-full overflow-hidden bg-[#09090B] text-white">
       <GameScreen
@@ -74,6 +82,8 @@ export default function GamePage() {
         lastRound={lastRound}
         topicIds={topicIds}
         topicNames={topicNames}
+        topicDescriptions={topicDescriptions}
+        topicCategories={topicCategories}
       />
     </main>
   );

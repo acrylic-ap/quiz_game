@@ -13,6 +13,8 @@ export interface RoomConfig {
 export interface RoomGameConfig {
   lastRound: number;
   topic: Map<string, string>;
+  topicDescriptions: Map<string, string>;
+  topicCategories: Map<string, string>;
   decision: "random" | "vote" | "always_random";
   rankBasis: "count";
 }

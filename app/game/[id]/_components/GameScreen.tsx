@@ -19,6 +19,8 @@ interface GameScreenProps {
   lastRound: number;
   topicIds: string[];
   topicNames: Record<string, string>;
+  topicDescriptions: Record<string, string>;
+  topicCategories: Record<string, string>;
 }
 
 export const GameScreen = ({
@@ -32,6 +34,8 @@ export const GameScreen = ({
   lastRound,
   topicIds,
   topicNames,
+  topicDescriptions,
+  topicCategories,
 }: GameScreenProps) => {
   const { startedAt: topicVoteStartedAt, serverTimeOffset } =
     useGameTopicVoteTimer(roomId);
@@ -55,6 +59,8 @@ export const GameScreen = ({
                 isOwner={isOwner}
                 topicIds={topicIds}
                 topicNames={topicNames}
+                topicDescriptions={topicDescriptions}
+                topicCategories={topicCategories}
                 decision={decision}
               />
             ) : (
@@ -64,6 +70,8 @@ export const GameScreen = ({
                 users={users}
                 topicIds={topicIds}
                 topicNames={topicNames}
+                topicDescriptions={topicDescriptions}
+                topicCategories={topicCategories}
                 decision={decision}
                 topicVoteStartedAt={topicVoteStartedAt}
                 serverTimeOffset={serverTimeOffset}
