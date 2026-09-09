@@ -1,5 +1,4 @@
-import { Status } from "../room/room";
-import { TopicDecisionType } from "../topic/topic";
+import { RoomStatus } from "../room/room";
 
 export interface LobbyRoom {
   id: string;
@@ -8,5 +7,5 @@ export interface LobbyRoom {
   capacity: number;
   maxCapacity: number;
   lastRound: number;
-  status: Status;
+  status: RoomStatus;
 }

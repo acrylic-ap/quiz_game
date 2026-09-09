@@ -22,6 +22,7 @@ const buttonVariants = cva(
         // 배경 없음 - 텍스트만
         ghost:
           "text-foreground hover:bg-muted hover:text-foreground active:scale-95",
+        simple: "",
         // 소셜 로그인
         social:
           "bg-muted text-muted-foreground hover:bg-muted/70 active:scale-95",

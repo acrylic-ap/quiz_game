@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { Room } from "@/types/room/room";
 
 export const useRoomDetail = (roomId: string | null) => {
-  return useQuery<Room | null>({
+  return useQuery({
     queryKey: ["rooms", roomId],
     queryFn: async () => {
       if (!roomId) return null;
@@ -27,7 +26,7 @@ export const useRoomDetail = (roomId: string | null) => {
         internalValue: data.internalValue || 0,
         showPublic: data.showPublic ?? true,
         rank: data.rank || "count",
-      } as Room;
+      };
     },
     enabled: !!roomId,
   });

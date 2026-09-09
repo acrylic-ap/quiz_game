@@ -25,6 +25,7 @@ export interface RoomUser {
   id: string;
   nickname: string;
   isReady: boolean;
+  avatar?: string;
 }
 
 export interface Room {

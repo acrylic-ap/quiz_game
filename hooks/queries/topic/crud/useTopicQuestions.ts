@@ -15,42 +15,25 @@ export const useTopicQuestions = (topicId: string | undefined) => {
         return [];
       }
 
-      const quizzesSnapshot = await getDocs(
-        collection(db, "topics", topicId, "quizzes"),
+      const questionsSnapshot = await getDocs(
+        collection(db, "topics", topicId, "questions"),
       );
 
-      const questionGroups = await Promise.all(
-        quizzesSnapshot.docs.map(async (quizDoc) => {
-          const questionsSnapshot = await getDocs(
-            collection(
-              db,
-              "topics",
-              topicId,
-              "quizzes",
-              quizDoc.id,
-              "questions",
-            ),
-          );
+      return questionsSnapshot.docs.map((questionDoc) => {
+        const data = questionDoc.data();
 
-          return questionsSnapshot.docs.map((questionDoc) => {
-            const data = questionDoc.data();
-
-            return {
-              id: questionDoc.id,
-              question: data.question ?? "",
-              type: data.type ?? "",
-              questionType: data.questionType,
-              answerType: data.answerType,
-              options: data.options ?? [],
-              answer: data.answer,
-              difficulty: data.difficulty,
-              hints: data.hints ?? [],
-            };
-          });
-        }),
-      );
-
-      return questionGroups.flat();
+        return {
+          id: questionDoc.id,
+          question: data.question ?? "",
+          type: data.type ?? "",
+          questionType: data.questionType,
+          answerType: data.answerType,
+          options: data.options ?? [],
+          answer: data.answer,
+          difficulty: data.difficulty,
+          hints: data.hints ?? [],
+        };
+      });
     },
 
     enabled: !!topicId,

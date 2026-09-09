@@ -3,13 +3,6 @@ export interface Topic {
   topicName: string;
   description: string;
   category: string;
-  quizzes?: Quiz[];
-}
-
-export interface Quiz {
-  id: string;
-  title: string;
-  description?: string;
   questions?: Question[];
 }
 
