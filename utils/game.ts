@@ -1,5 +1,5 @@
 import { GameRankingEntry, GameSubmission } from "@/types/game/game";
-import { Question } from "@/types/topic/topic";
+import { matchesAnswer } from "@/utils/answer";
 
 export const QUESTION_TIME_LIMIT_MS = 30_000;
 export const PHASE_TRANSITION_MS = 10_000;
@@ -12,19 +12,7 @@ const DIFFICULTY_MULTIPLIER: Record<number, number> = {
   5: 1.5,
 };
 
-const normalizeAnswer = (answer: string | null | undefined) =>
-  (answer ?? "").trim().toLocaleLowerCase();
-
-export const isCorrectAnswer = (
-  question: Question,
-  answer: string | null,
-): boolean => {
-  if (!question.answer || answer === null) {
-    return false;
-  }
-
-  return normalizeAnswer(answer) === normalizeAnswer(question.answer);
-};
+export const isCorrectAnswer = matchesAnswer;
 
 export const getComboMultiplier = (combo: number) =>
   2 - 1 / (combo + 1);

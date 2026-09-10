@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGamePlayActions } from "@/hooks/queries/game/actions/useGamePlayActions";
 import { Game } from "@/types/game/game";
 import { Question } from "@/types/topic/topic";
+import { isChoiceQuestion, matchesAnswer } from "@/utils/answer";
 import { PhaseCountdown, PhaseNextButton } from "./PhaseTransition";
 
 interface ResultViewProps {
@@ -39,16 +40,13 @@ export const ResultView = ({
 
   const hasRequested = game.round?.resultNextReady?.[userId] === true;
 
-  const isChoice =
-    question.answerType === "single" ||
-    question.questionType === "choice" ||
-    (question.options?.length ?? 0) > 0;
+  const isChoice = isChoiceQuestion(question);
 
   const isTimeout = submission?.status === "timeout";
   const isCorrect = submission?.isCorrect === true;
 
   const getChoiceStyle = (option: string) => {
-    const isCorrectAnswer = option === question.answer;
+    const isCorrectAnswer = matchesAnswer(question, option);
     const isMyAnswer = option === submission?.answer;
 
     // 정답 선지

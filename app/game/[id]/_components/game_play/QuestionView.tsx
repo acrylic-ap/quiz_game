@@ -6,6 +6,7 @@ import { CornerDownLeft, Volume2 } from "lucide-react";
 import { useGamePlayActions } from "@/hooks/queries/game/actions/useGamePlayActions";
 import { Game } from "@/types/game/game";
 import { Question } from "@/types/topic/topic";
+import { isChoiceQuestion } from "@/utils/answer";
 
 import { GameUser } from "./types";
 import { useRemainingSeconds } from "./useRemainingSeconds";
@@ -79,10 +80,7 @@ export const QuestionView = ({
     // }
   }, [question.id, question.type]);
 
-  const isChoice =
-    question.answerType === "single" ||
-    question.questionType === "choice" ||
-    (question.options?.length ?? 0) > 0;
+  const isChoice = isChoiceQuestion(question);
 
   const updateScrollGuide = () => {
     const element = scrollRef.current;
@@ -135,14 +133,14 @@ export const QuestionView = ({
     );
   }
 
-  const canSubmit = answer.trim().length > 0 && remainingSeconds !== 0;
+  const canSubmit = answer.length > 0 && remainingSeconds !== 0;
 
   const handleSubmit = () => {
     if (!canSubmit) {
       return;
     }
 
-    void submitAnswer(answer.trim(), player);
+    void submitAnswer(answer, player);
   };
 
   const handleChoice = (option: string) => {
@@ -230,6 +228,12 @@ export const QuestionView = ({
           */}
         </div>
       )}
+
+      {(question.hints ?? []).filter((hint) =>
+        hint.revealTime !== undefined && remainingSeconds !== null && remainingSeconds <= hint.revealTime,
+      ).sort((a, b) => (b.revealTime ?? 0) - (a.revealTime ?? 0)).map((hint, index) => (
+        <p key={hint.id ?? index} className="mt-3 whitespace-pre-wrap text-zinc-400">{hint.content}</p>
+      ))}
 
       {isChoice ? (
         <div className="relative mt-8 min-h-0 flex-1">

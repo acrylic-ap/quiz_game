@@ -4,6 +4,12 @@ export interface Topic {
   description: string;
   category: string;
   questions?: Question[];
+  imageUrl?: string;
+  imagePath?: string;
+  ownerId?: string;
+  questionCount?: number;
+  updatedAt?: number;
+  approvalStatus?: "approved" | "rejected" | "pending" | "unregistered";
 }
 
 export interface Question {
@@ -16,6 +22,9 @@ export interface Question {
   answer?: string;
   difficulty?: number;
   hints?: Hint[];
+  answerMatch?: "exact" | "ignoreWhitespace";
+  correctOptions?: number[];
+  order?: number;
 }
 
 export interface Hint {

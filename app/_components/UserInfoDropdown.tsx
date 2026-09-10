@@ -19,7 +19,7 @@ import { User } from "lucide-react";
 
 const DROPDOWN_ITEMS = [
   { label: "전적" },
-  { label: "퀴즈 관리" },
+  { label: "주제 설정" },
   { label: "로그아웃", isLogout: true },
 ];
 
@@ -27,12 +27,14 @@ interface Props {
   user: { nickname: string };
   onLogout: () => void;
   onItemClick: () => void;
+  onTopicSettings: () => void;
 }
 
 export default function UserInfoDropdown({
   user,
   onLogout,
   onItemClick,
+  onTopicSettings,
 }: Props) {
   return (
     <DropdownMenu>
@@ -70,7 +72,7 @@ export default function UserInfoDropdown({
           <DropdownMenuItem
             key={item.label}
             className="flex justify-center hover:bg-zinc-700 cursor-pointer"
-            onClick={item.isLogout ? onLogout : onItemClick}
+            onClick={item.isLogout ? onLogout : item.label === "주제 설정" ? onTopicSettings : onItemClick}
           >
             {item.label}
           </DropdownMenuItem>
