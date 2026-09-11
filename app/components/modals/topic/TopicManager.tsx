@@ -135,21 +135,9 @@ export function TopicManager({
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
 
-  // TODO: 디자인 확인 후 삭제
-  const dummyTopic = {
-    id: "dummy-topic",
-    topicName: "맞춤법 퀴즈",
-    category: "국어",
-    description: "맞춤법 문제 모음",
-    questionCount: 20,
-    updatedAt: Date.now(),
-    approvalStatus: "pending",
-  } as Topic;
+  const displayTopics = topics.length > 0 ? topics : null;
 
-  // TODO: 디자인 확인 후 제거
-  const displayTopics = topics.length > 0 ? topics : [dummyTopic];
-
-  const filtered = displayTopics.filter(
+  const filtered = displayTopics?.filter(
     (topic) =>
       topic.topicName.includes(search) &&
       (category === "all" || topic.category === category) &&
@@ -220,7 +208,7 @@ export function TopicManager({
                 <SelectItem value="all">카테고리</SelectItem>
 
                 {Array.from(
-                  new Set(displayTopics.map((topic) => topic.category)),
+                  new Set(displayTopics?.map((topic) => topic.category)),
                 )
                   .filter(Boolean)
                   .map((value) => (
@@ -270,7 +258,7 @@ export function TopicManager({
 
       <div className="mt-[24px] min-h-0 flex-1 overflow-y-auto">
         <div className="flex flex-col gap-[10px]">
-          {filtered.map((topic) => {
+          {filtered?.map((topic) => {
             const approvalStatus = (topic.approvalStatus ??
               "unregistered") as keyof typeof labels;
 
@@ -369,7 +357,7 @@ export function TopicManager({
             );
           })}
 
-          {!loading && filtered.length === 0 && (
+          {!loading && filtered?.length === 0 && (
             <div className="flex h-[80px] items-center text-[14px] text-zinc-500">
               검색 결과가 없습니다.
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { XIcon } from "lucide-react";
 
@@ -68,6 +68,20 @@ export default function TopicSettingsModal({
     queryFn: loadMyTopics,
     enabled: open && screen === "manage" && !!userId,
   });
+
+  const allTopics = client.getQueryData<Topic[]>(["topics"]) ?? [];
+
+  const categories = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allTopics
+            .map((topic) => topic.category)
+            .filter((category) => category.length > 0),
+        ),
+      ),
+    [allTopics],
+  );
 
   useEffect(() => {
     return () => {
@@ -279,6 +293,7 @@ export default function TopicSettingsModal({
                 <TopicEditor
                   topic={topic}
                   questions={questions}
+                  categories={categories}
                   tab={tab}
                   selected={selected}
                   preview={preview}
