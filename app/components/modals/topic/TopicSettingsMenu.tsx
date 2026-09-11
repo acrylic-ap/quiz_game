@@ -3,7 +3,7 @@
 function CreateTopicIcon() {
   return (
     <svg
-      className="h-auto w-[4vw]"
+      className="h-auto w-[56px]"
       viewBox="0 0 78 78"
       fill="none"
       aria-hidden="true"
@@ -27,7 +27,7 @@ function CreateTopicIcon() {
 function ManageTopicIcon() {
   return (
     <svg
-      className="h-auto w-[4vw]"
+      className="h-auto w-[56px]"
       viewBox="0 0 79 86"
       fill="none"
       aria-hidden="true"
@@ -72,26 +72,26 @@ export function TopicSettingsMenu({
   onCreate: () => void;
   onManage: () => void;
 }) {
-  const buttonClass =
-    "group flex h-[21vh] w-[14vw] " +
-    "min-h-[160px] min-w-[160px] " +
-    "flex-col items-center justify-center gap-[2.5vh] " +
-    "rounded-lg border border-zinc-500 bg-transparent " +
-    "text-zinc-500 transition-colors " +
-    "hover:border-zinc-300 hover:text-zinc-300";
+  const buttonClass = `
+    group flex h-[170px] w-[170px]
+    flex-col items-center justify-center gap-[20px]
+    rounded-lg border border-zinc-500 bg-transparent
+    text-zinc-500 transition-colors
+    hover:border-zinc-300 hover:text-zinc-300
+  `;
 
   return (
-    <div className="flex items-center justify-center gap-[3.5vw]">
+    <div className="flex items-center justify-center gap-[36px]">
       <button type="button" className={buttonClass} onClick={onCreate}>
         <CreateTopicIcon />
 
-        <span className="text-[1.3vw] font-medium text-current">주제 생성</span>
+        <span className="text-[18px] font-medium text-current">주제 생성</span>
       </button>
 
       <button type="button" className={buttonClass} onClick={onManage}>
         <ManageTopicIcon />
 
-        <span className="text-[1.3vw] font-medium text-current">주제 관리</span>
+        <span className="text-[18px] font-medium text-current">주제 관리</span>
       </button>
     </div>
   );

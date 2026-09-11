@@ -45,6 +45,7 @@ export default function TopicSettingsModal({
   const [screen, setScreen] = useState<"settings" | "edit" | "manage">(
     "settings",
   );
+
   const [tab, setTab] = useState<"topic" | "questions">("topic");
 
   const [topic, setTopic] = useState<Topic | null>(null);
@@ -166,7 +167,9 @@ export default function TopicSettingsModal({
   const close = (value: boolean) => {
     if (busy) return;
 
-    if (!value) resetToSettings();
+    if (!value) {
+      resetToSettings();
+    }
 
     onOpenChange(value);
   };
@@ -187,12 +190,17 @@ export default function TopicSettingsModal({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent
         showCloseButton={false}
-        className={`
-          h-[80vh] !w-[70vw] !max-w-[70vw] p-0 bg-[#09090B]
-          overflow-y-auto
+        className="
+          flex h-[80vh]
+          !w-[70vw] !max-w-[70vw]
+          flex-col
+          gap-0
+          overflow-hidden
           border-zinc-700
+          bg-[#09090B]
+          p-0
           text-zinc-100
-        `}
+        "
         aria-describedby={undefined}
         onEscapeKeyDown={(e) => {
           if (busy) {
@@ -208,7 +216,7 @@ export default function TopicSettingsModal({
             <Button
               type="button"
               variant="simple"
-              className="absolute top-4 right-4"
+              className="absolute top-4 right-4 z-10"
               size="icon-sm"
             >
               <XIcon />
@@ -219,7 +227,7 @@ export default function TopicSettingsModal({
           <Button
             type="button"
             variant="simple"
-            className="absolute top-4 right-4"
+            className="absolute top-4 right-4 z-10"
             size="icon-sm"
             onClick={resetToSettings}
           >
@@ -228,94 +236,102 @@ export default function TopicSettingsModal({
           </Button>
         )}
 
-        <DialogHeader className={screen === "settings" ? "pt-[80px]" : ""}>
-          <DialogTitle
-            className={
-              screen === "settings"
-                ? "text-center text-[36px] font-semibold"
-                : "text-2xl"
-            }
+        {screen === "settings" ? (
+          <fieldset
+            disabled={busy}
+            className="
+              flex min-h-0 flex-1
+              flex-col
+              items-center
+              justify-center
+              gap-[56px]
+            "
           >
-            {screen === "settings"
-              ? "주제 설정"
-              : screen === "manage"
-                ? "주제 관리"
-                : "주제 생성"}
-          </DialogTitle>
-        </DialogHeader>
+            <DialogHeader>
+              <DialogTitle className="text-center text-[36px] font-semibold">
+                주제 설정
+              </DialogTitle>
+            </DialogHeader>
 
-        <fieldset
-          disabled={busy}
-          className={screen === "settings" ? "min-w-0" : "min-w-0 space-y-4"}
-        >
-          {screen === "settings" && (
-            <div>
-              <TopicSettingsMenu
-                onCreate={() => {
-                  void edit();
-                }}
-                onManage={() => {
-                  setError("");
-                  setScreen("manage");
-                }}
-              />
-            </div>
-          )}
-
-          {screen === "edit" && topic && (
-            <TopicEditor
-              topic={topic}
-              questions={questions}
-              tab={tab}
-              selected={selected}
-              preview={preview}
-              onTab={setTab}
-              onTopicChange={setTopic}
-              onImage={(file: File, url: string) => {
-                setImage(file);
-                setPreview(url);
+            <TopicSettingsMenu
+              onCreate={() => {
+                void edit();
               }}
-              onError={report}
-              onSelect={setSelected}
-              onAdd={(q: Question) => {
-                setQuestions([...questions, q]);
-
-                setSelected(q.id);
+              onManage={() => {
+                setError("");
+                setScreen("manage");
               }}
-              onDelete={(id: string) => {
-                const i = questions.findIndex((q) => q.id === id);
-
-                const next = questions.filter((q) => q.id !== id);
-
-                setQuestions(next);
-
-                if (selected === id) {
-                  setSelected(next[Math.min(i, next.length - 1)]?.id ?? null);
-                }
-              }}
-              onReorder={reorder}
-              onQuestionChange={(q: Question) => {
-                setQuestions(questions.map((x) => (x.id === q.id ? q : x)));
-              }}
-              onSave={save}
             />
-          )}
+          </fieldset>
+        ) : (
+          <>
+            <DialogHeader className="shrink-0 px-[40px] pt-[30px]">
+              <DialogTitle className="text-left text-[28px] font-semibold">
+                {screen === "manage" ? "주제 관리" : "주제 생성"}
+              </DialogTitle>
+            </DialogHeader>
 
-          {screen === "manage" && (
-            <TopicManager
-              topics={list.data ?? []}
-              loading={list.isLoading}
-              error={list.error as Error | null}
-              onEdit={(t) => {
-                void edit(t);
-              }}
-              onDelete={setDeleting}
-            />
-          )}
-        </fieldset>
+            <fieldset
+              disabled={busy}
+              className="min-h-0 flex-1 overflow-y-auto pt-[22px]"
+            >
+              {screen === "edit" && topic && (
+                <TopicEditor
+                  topic={topic}
+                  questions={questions}
+                  tab={tab}
+                  selected={selected}
+                  preview={preview}
+                  onTab={setTab}
+                  onTopicChange={setTopic}
+                  onImage={(file: File, url: string) => {
+                    setImage(file);
+                    setPreview(url);
+                  }}
+                  onError={report}
+                  onSelect={setSelected}
+                  onAdd={(q: Question) => {
+                    setQuestions([...questions, q]);
+                    setSelected(q.id);
+                  }}
+                  onDelete={(id: string) => {
+                    const i = questions.findIndex((q) => q.id === id);
+
+                    const next = questions.filter((q) => q.id !== id);
+
+                    setQuestions(next);
+
+                    if (selected === id) {
+                      setSelected(
+                        next[Math.min(i, next.length - 1)]?.id ?? null,
+                      );
+                    }
+                  }}
+                  onReorder={reorder}
+                  onQuestionChange={(q: Question) => {
+                    setQuestions(questions.map((x) => (x.id === q.id ? q : x)));
+                  }}
+                  onSave={save}
+                />
+              )}
+
+              {screen === "manage" && (
+                <TopicManager
+                  topics={list.data ?? []}
+                  loading={list.isLoading}
+                  error={list.error as Error | null}
+                  onEdit={(t) => {
+                    void edit(t);
+                  }}
+                  onDelete={setDeleting}
+                />
+              )}
+            </fieldset>
+          </>
+        )}
 
         {error && (
-          <p role="alert" className="text-red-400">
+          <p role="alert" className="shrink-0 px-[40px] pb-[16px] text-red-400">
             {error}
           </p>
         )}
@@ -342,7 +358,6 @@ export default function TopicSettingsModal({
               await refresh();
             } catch (e) {
               setDeleting(null);
-
               report(e);
             } finally {
               setBusy(false);
