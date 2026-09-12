@@ -100,7 +100,7 @@ export function QuestionSettingsDialog({
                 answer: "",
                 options: questionType === "choice" ? ["", ""] : [],
                 correctOptions: [],
-                answerType: "single",
+                answerType: questionType === "choice" ? "all" : "single",
                 answerMatch: question.answerMatch ?? "exact",
               })
             }

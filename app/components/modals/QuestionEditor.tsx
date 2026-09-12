@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 
 import { Question } from "@/types/topic/topic";
-import { isChoiceQuestion, parseAnswers } from "@/utils/answer";
+import { getChoiceAnswerMode, isChoiceQuestion, parseAnswers } from "@/utils/answer";
 import { CheckIcon } from "@/components/common/icons/CheckIcon";
 import { DeleteIcon } from "@/components/common/icons/DeleteIcon";
 import { DragIcon } from "@/components/common/icons/DragIcon";
@@ -31,6 +31,7 @@ export function QuestionEditor({
 
   const choice = isChoiceQuestion(question);
   const multiple = question.answerType === "multiple";
+  const choiceMode = getChoiceAnswerMode(question);
   const options = question.options ?? [];
 
   const correct =
@@ -50,6 +51,7 @@ export function QuestionEditor({
     update({
       options: values,
       correctOptions: indices,
+      answerType: indices.length >= 2 && choiceMode === "any" ? "any" : "all",
       answer: values[indices[0]] ?? "",
     });
   };
@@ -59,17 +61,8 @@ export function QuestionEditor({
       return;
     }
 
-    const indices = correct.slice(0, 1);
-
     update({
       answerType: nextMultiple ? "multiple" : "single",
-
-      ...(choice && !nextMultiple
-        ? {
-            correctOptions: indices,
-            answer: options[indices[0]] ?? "",
-          }
-        : {}),
     });
   };
 
@@ -121,7 +114,8 @@ export function QuestionEditor({
           </button>
         </div>
 
-        {/* 단일 / 복수 정답 */}
+        {/* 객관식은 정답이 둘 이상일 때만 방식 선택 */}
+        {(!choice || correct.length >= 2) && (
         <div className="absolute right-0 top-0">
           <div className="flex h-[34px] rounded-[8px] bg-zinc-800 p-[3px]">
             <button
@@ -130,11 +124,11 @@ export function QuestionEditor({
                 rounded-[6px]
                 px-[14px]
                 text-[14px]
-                ${!multiple ? "bg-[#09090B] text-zinc-200" : "text-zinc-500"}
+                ${(choice ? choiceMode === "all" : !multiple) ? "bg-[#09090B] text-zinc-200" : "text-zinc-500"}
               `}
-              onClick={() => toggleMultiple(false)}
+              onClick={() => choice ? update({ answerType: "all" }) : toggleMultiple(false)}
             >
-              단일 정답
+              {choice ? "다중 정답" : "단일 인정 답안"}
             </button>
 
             <button
@@ -143,14 +137,15 @@ export function QuestionEditor({
                 rounded-[6px]
                 px-[14px]
                 text-[14px]
-                ${multiple ? "bg-[#09090B] text-zinc-200" : "text-zinc-500"}
+                ${(choice ? choiceMode === "any" : multiple) ? "bg-[#09090B] text-zinc-200" : "text-zinc-500"}
               `}
-              onClick={() => toggleMultiple(true)}
+              onClick={() => choice ? update({ answerType: "any" }) : toggleMultiple(true)}
             >
-              복수 정답
+              {choice ? "복수 정답" : "여러 인정 답안"}
             </button>
           </div>
         </div>
+        )}
 
         <div className="flex h-full min-h-0 flex-col items-center pt-[44px]">
           <span className="text-[24px] font-semibold text-zinc-200">
@@ -383,7 +378,7 @@ export function QuestionEditor({
 
                             updateOptions(
                               options,
-                              multiple ? [...correct, index] : [index],
+                              [...correct, index],
                             );
                           }}
                         >

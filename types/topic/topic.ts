@@ -17,7 +17,9 @@ export interface Question {
   question: string;
   type: string;
   questionType?: string;
-  answerType?: string;
+  // 객관식: all(다중 정답, 모두 선택) / any(복수 정답, 하나 선택).
+  // single/multiple은 주관식 및 이전 데이터용.
+  answerType?: "all" | "any" | "single" | "multiple";
   options?: string[];
   answer?: string;
   difficulty?: number;

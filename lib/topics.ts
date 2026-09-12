@@ -2,7 +2,7 @@ import { collection, doc, getDoc, getDocs, query, runTransaction, where, writeBa
 import { deleteObject, getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import app, { auth, db } from "@/lib/firebase";
 import { Question, Topic } from "@/types/topic/topic";
-import { isChoiceQuestion, normalizeAnswer, parseAnswers } from "@/utils/answer";
+import { isChoiceQuestion, normalizeAnswer, parseAnswers, normalizeQuestionAnswerType } from "@/utils/answer";
 import { QUESTION_TIME_LIMIT_MS } from "@/utils/game";
 
 export function mapTopic(id: string, data: Record<string, unknown>): Topic {
@@ -11,7 +11,7 @@ export function mapTopic(id: string, data: Record<string, unknown>): Topic {
 
 export async function loadQuestions(topicId: string): Promise<Question[]> {
   const snapshot = await getDocs(collection(db, "topics", topicId, "questions"));
-  return snapshot.docs.map((item) => ({ ...item.data(), id: item.id } as Question))
+  return snapshot.docs.map((item) => normalizeQuestionAnswerType({ ...item.data(), id: item.id } as Question))
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
@@ -35,7 +35,6 @@ export function validateTopic(topic: Topic, questions: Question[]) {
       if (new Set(options).size !== options.length) throw new Error(prefix + "같은 보기를 중복 입력할 수 없습니다.");
       const correct = question.correctOptions ?? options.flatMap((option, i) => option === question.answer ? [i] : []);
       if (!correct.length || correct.some((i) => !Number.isInteger(i) || i < 0 || i >= options.length)) throw new Error(prefix + "정답을 선택해주세요.");
-      if (question.answerType !== "multiple" && correct.length !== 1) throw new Error(prefix + "단일 정답은 하나만 선택해주세요.");
     } else if (parseAnswers(question.answer ?? "", question.answerType === "multiple").some((value) => !normalizeAnswer(value, question.answerMatch).length)) {
       throw new Error(prefix + "비어 있는 정답을 입력할 수 없습니다.");
     }
@@ -90,7 +89,7 @@ export async function saveTopic(topic: Topic, questions: Question[], image?: Fil
       removed.forEach((item) => transaction.delete(item.ref));
       questions.forEach((question, order) => {
         // Firestore/Realtime Database do not accept undefined fields.
-        const data = JSON.parse(JSON.stringify({ ...question, order }));
+        const data = JSON.parse(JSON.stringify({ ...normalizeQuestionAnswerType(question), order }));
         transaction.set(doc(topicRef, "questions", question.id), data);
       });
     });

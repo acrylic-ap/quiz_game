@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 
 import { Question } from "@/types/topic/topic";
-import { isChoiceQuestion } from "@/utils/answer";
+import { getChoiceAnswerMode, isChoiceQuestion } from "@/utils/answer";
 
 import { DeleteIcon } from "@/components/common/icons/DeleteIcon";
 import { DragIcon } from "@/components/common/icons/DragIcon";
@@ -34,7 +34,7 @@ export function QuestionList({
       question: "",
       type: "text",
       questionType: "choice",
-      answerType: "single",
+      answerType: "all",
       answerMatch: "exact",
       options: ["", ""],
       correctOptions: [],
@@ -194,9 +194,9 @@ export function QuestionList({
                     <span className="mx-[9px] h-[12px] w-px bg-zinc-700" />
 
                     <span>
-                      {question.answerType === "multiple"
-                        ? "복수 정답"
-                        : "단일 정답"}
+                      {isChoiceQuestion(question)
+                        ? { single: "단일 정답", all: "다중 정답", any: "복수 정답" }[getChoiceAnswerMode(question)]
+                        : question.answerType === "multiple" ? "여러 인정 답안" : "단일 인정 답안"}
                     </span>
                   </div>
                 </div>

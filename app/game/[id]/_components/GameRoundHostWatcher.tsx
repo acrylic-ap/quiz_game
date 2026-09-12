@@ -275,5 +275,44 @@ export const GameRoundHostWatcher = ({
     users,
   ]);
 
+  useEffect(() => {
+    const finalReturnReady = game.finalReturnReady ?? {};
+    const allUsersReturned =
+      isOwner &&
+      game.phase === "final" &&
+      users.length > 0 &&
+      users.every((user) => finalReturnReady[user.id] === true);
+
+    if (!allUsersReturned) {
+      return;
+    }
+
+    const roomRef = ref(rtdb, `room_sessions/${roomId}`);
+
+    void runTransaction(roomRef, (room) => {
+      if (!room || room.game?.phase !== "final") {
+        return;
+      }
+
+      const currentUsers = room.users ?? {};
+      const allReady = Object.keys(currentUsers).length > 0 &&
+        Object.keys(currentUsers).every(
+          (userId) => room.game?.finalReturnReady?.[userId] === true,
+        );
+
+      if (!allReady) {
+        return;
+      }
+
+      const resetUsers = Object.fromEntries(
+        Object.entries<Record<string, unknown>>(currentUsers).map(
+          ([id, value]) => [id, { ...value, isReady: false }],
+        ),
+      );
+
+      return { ...room, status: "waiting", users: resetUsers, game: null };
+    });
+  }, [game.finalReturnReady, game.phase, isOwner, roomId, users]);
+
   return null;
 };

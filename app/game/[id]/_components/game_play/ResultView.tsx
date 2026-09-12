@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { ScrollDownIcon } from "@/components/common/icons/ScrollDownIcon";
+import { ScrollUpIcon } from "@/components/common/icons/ScrollUpIcon";
 import { useGamePlayActions } from "@/hooks/queries/game/actions/useGamePlayActions";
 import { Game } from "@/types/game/game";
 import { Question } from "@/types/topic/topic";
@@ -49,7 +51,9 @@ export const ResultView = ({
     const isCorrectAnswer = getCorrectOptionIndices(question).includes(index);
     const isMyAnswer = Array.isArray(submission?.answer)
       ? submission.answer.includes(index)
-      : question.options?.[index] === submission?.answer;
+      : typeof submission?.answer === "number"
+        ? submission.answer === index
+        : question.options?.[index] === submission?.answer;
 
     // 정답 선지
     if (isCorrectAnswer) {
@@ -146,21 +150,7 @@ export const ResultView = ({
         <div className="relative mt-10 min-h-0 flex-1">
           {canScrollUp && (
             <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex h-10 items-start justify-center bg-gradient-to-b from-[#09090B] to-transparent pt-1">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 15L12 9L18 15"
-                  stroke="#71717A"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <ScrollUpIcon />
             </div>
           )}
 
@@ -191,21 +181,7 @@ export const ResultView = ({
 
           {canScrollDown && (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-10 items-end justify-center bg-gradient-to-t from-[#09090B] to-transparent pb-1">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 9L12 15L18 9"
-                  stroke="#71717A"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <ScrollDownIcon />
             </div>
           )}
         </div>

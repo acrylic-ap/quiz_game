@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { db, rtdb } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useAuth } from "../../common/account/useAuth";
-import { get, onDisconnect, onValue, ref, remove } from "firebase/database";
+import { onDisconnect, onValue, ref } from "firebase/database";
 import { useRoomUsers } from "./useRoomUsers";
 import { Room } from "@/types/room/room";
 
@@ -99,23 +99,6 @@ export const useRoomSubscription = (roomId: string | undefined) => {
         const status = data.status ?? "waiting";
 
         const isPlaying = status === "playing";
-
-        // 대기/설정 중인 방의 방장 이탈 확인
-        if (!isPlaying && ownerId) {
-          const ownerSessionRef = ref(
-            rtdb,
-            `room_sessions/${roomId}/users/${ownerId}`,
-          );
-
-          const ownerSnap = await get(ownerSessionRef);
-
-          if (!ownerSnap.exists()) {
-            await remove(sessionRef);
-
-            setRoomStatus("lost");
-            return;
-          }
-        }
 
         const topicIds = data.gameConfig?.topic
           ? data.gameConfig.topic.split(", ")

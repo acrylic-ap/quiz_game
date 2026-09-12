@@ -1,5 +1,5 @@
 import { Question } from "@/types/topic/topic";
-import { getCorrectOptionIndices, isChoiceQuestion } from "@/utils/answer";
+import { getCorrectOptionIndices, isChoiceQuestion, normalizeQuestionAnswerType } from "@/utils/answer";
 import { shuffle } from "@/utils/random";
 
 // 호스트가 한 번 구성한 순서를 RTDB로 공유한다. 원본 편집 데이터는 변경하지 않는다.
@@ -12,7 +12,7 @@ export const buildGameQuestionList = (questions: Question[], lastRound: number):
       correct: correct.has(index),
     })));
     return {
-      ...question,
+      ...normalizeQuestionAnswerType(question),
       options: entries.map((entry) => entry.value),
       correctOptions: entries.flatMap((entry, index) => entry.correct ? [index] : []),
     };

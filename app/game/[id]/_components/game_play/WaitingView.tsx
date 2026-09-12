@@ -2,8 +2,9 @@
 
 import { Game } from "@/types/game/game";
 import { isSubmissionComplete } from "@/utils/game";
+import { ClockIcon } from "@/components/common/icons/ClockIcon";
+import { VoterIcon } from "@/components/common/icons/VoterIcon";
 
-import { ClockIcon } from "./waiting_view/ClockIcon";
 import { GameUser } from "./types";
 import { useRemainingSeconds } from "./useRemainingSeconds";
 
@@ -32,26 +33,12 @@ export const WaitingView = ({ users, game, deadlineAt }: WaitingViewProps) => {
                 const complete = isSubmissionComplete(submissions[user.id]);
 
                 return (
-                  <svg
+                  <VoterIcon
                     key={user.id}
                     width="26"
                     height="30"
-                    viewBox="0 0 18 22"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      cx="9"
-                      cy="5.5"
-                      r="5.5"
-                      fill={complete ? "#D4D4D8" : "#52525B"}
-                    />
-
-                    <path
-                      d="M0 21.0287C0 7.31719 18 8.07896 18 21.0287L0 21.0287Z"
-                      fill={complete ? "#D4D4D8" : "#52525B"}
-                    />
-                  </svg>
+                    fill={complete ? "#D4D4D8" : "#52525B"}
+                  />
                 );
               })}
             </div>

@@ -20,6 +20,10 @@
 # test
 *.test.ts
 
+# rules
+*.rules
+*.rules.json
+
 # codex
 .codex
 

@@ -18,7 +18,7 @@ export interface GameRoundPlayer {
 }
 
 export interface GameSubmission {
-  answer: string | number[] | null;
+  answer: string | number | number[] | null;
   startedAt: number;
   solveTimestamp: number;
   elapsedTime: number;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { ref, runTransaction, serverTimestamp } from "firebase/database";
+import { ref, runTransaction, serverTimestamp, set } from "firebase/database";
 
 import { rtdb } from "@/lib/firebase";
 import { GameRoundPlayer, GameSubmission } from "@/types/game/game";
@@ -110,22 +110,19 @@ export const useGamePlayActions = (
         return;
       }
 
-      const roundRef = ref(rtdb, `room_sessions/${roomId}/game/round`);
+      const timestampRef = ref(
+        rtdb,
+        `room_sessions/${roomId}/game/round/${timestampField}`,
+      );
+      const readyRef = ref(
+        rtdb,
+        `room_sessions/${roomId}/game/round/${readyField}/${userId}`,
+      );
 
-      await runTransaction(roundRef, (currentRound) => {
-        if (!currentRound) {
-          return currentRound;
-        }
-
-        return {
-          ...currentRound,
-          [timestampField]: currentRound[timestampField] ?? serverTimestamp(),
-          [readyField]: {
-            ...(currentRound[readyField] ?? {}),
-            [userId]: true,
-          },
-        };
-      });
+      await runTransaction(timestampRef, (currentTimestamp) =>
+        currentTimestamp ?? serverTimestamp(),
+      );
+      await set(readyRef, true);
     },
     [roomId, userId],
   );
@@ -145,53 +142,10 @@ export const useGamePlayActions = (
       return;
     }
 
-    const roomRef = ref(rtdb, `room_sessions/${roomId}`);
-
-    await runTransaction(roomRef, (room) => {
-      if (!room) {
-        return;
-      }
-
-      const currentUsers = room.users ?? {};
-      const finalReturnReady = {
-        ...(room.game?.finalReturnReady ?? {}),
-        [userId]: true,
-      };
-      const allUsersReturned =
-        Object.keys(currentUsers).length > 0 &&
-        Object.keys(currentUsers).every(
-          (currentUserId) => finalReturnReady[currentUserId] === true,
-        );
-
-      if (!allUsersReturned) {
-        return {
-          ...room,
-          game: {
-            ...room.game,
-            finalReturnReady,
-          },
-        };
-      }
-
-      const users = Object.fromEntries(
-        Object.entries<Record<string, unknown>>(currentUsers).map(
-          ([id, value]) => [
-            id,
-            {
-              ...(value as Record<string, unknown>),
-              isReady: false,
-            },
-          ],
-        ),
-      );
-
-      return {
-        ...room,
-        status: "waiting",
-        users,
-        game: null,
-      };
-    });
+    await set(
+      ref(rtdb, `room_sessions/${roomId}/game/finalReturnReady/${userId}`),
+      true,
+    );
   }, [roomId, userId]);
 
   return {

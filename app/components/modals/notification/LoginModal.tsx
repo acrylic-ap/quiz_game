@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAtom } from "jotai";
 import { loginModalState } from "@/atoms/modalAtom";
-import { GoogleLogo } from "@/public/svg/Google";
+import { GoogleLogoIcon } from "@/components/common/icons/GoogleLogoIcon";
 import { useGoogleLogin } from "@/hooks/queries/common/account/useAuthMutation";
 
 export default function LoginModal() {
@@ -47,7 +47,7 @@ export default function LoginModal() {
             disabled={loginMutation.isPending}
           >
             <div className="flex items-center gap-2">
-              <GoogleLogo />
+              <GoogleLogoIcon />
               <p className="text-zinc-300">
                 {loginMutation.isPending
                   ? "Connecting..."

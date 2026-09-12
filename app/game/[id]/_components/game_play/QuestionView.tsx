@@ -3,10 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { CornerDownLeft, Volume2 } from "lucide-react";
 
+import { QuestionTimerIcon } from "@/components/common/icons/QuestionTimerIcon";
+import { ScrollDownIcon } from "@/components/common/icons/ScrollDownIcon";
+import { ScrollUpIcon } from "@/components/common/icons/ScrollUpIcon";
 import { useGamePlayActions } from "@/hooks/queries/game/actions/useGamePlayActions";
 import { Game } from "@/types/game/game";
 import { Question } from "@/types/topic/topic";
-import { isChoiceQuestion } from "@/utils/answer";
+import { getChoiceAnswerMode, isChoiceQuestion } from "@/utils/answer";
 import { getVisibleHints } from "@/utils/game";
 
 import { GameUser } from "./types";
@@ -83,7 +86,7 @@ export const QuestionView = ({
   }, [question.id, question.type]);
 
   const isChoice = isChoiceQuestion(question);
-  const isMultipleChoice = isChoice && question.answerType === "multiple";
+  const isMultipleChoice = isChoice && getChoiceAnswerMode(question) === "all";
 
   const updateScrollGuide = () => {
     const element = scrollRef.current;
@@ -144,7 +147,7 @@ export const QuestionView = ({
       return;
     }
 
-    void submitAnswer(isChoice ? selectedOptions : answer, player);
+    void submitAnswer(isChoice ? (isMultipleChoice ? selectedOptions : selectedOptions[0]) : answer, player);
   };
 
   const handleChoice = (index: number) => {
@@ -156,7 +159,7 @@ export const QuestionView = ({
       return;
     }
     if (selectedOptions.includes(index)) {
-      void submitAnswer([index], player);
+      void submitAnswer(index, player);
 
       return;
     }
@@ -198,29 +201,7 @@ export const QuestionView = ({
         </div>
 
         <div className="flex items-center gap-2 text-zinc-300">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 42 42"
-            fill="none"
-            aria-hidden="true"
-          >
-            <circle
-              cx="21"
-              cy="21"
-              r="19"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-
-            <path
-              d="M21 11V21L27 27"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <QuestionTimerIcon />
 
           <span className="text-[18px] font-medium">{remainingSeconds}</span>
         </div>
@@ -241,28 +222,22 @@ export const QuestionView = ({
       )}
 
       {getVisibleHints(question.hints ?? [], remainingSeconds).map((hint, index) => (
-        <p key={hint.id ?? index} className="mt-3 whitespace-pre-wrap text-zinc-400">{hint.content}</p>
+        <p
+          key={hint.id ?? index}
+          className="mt-3 whitespace-pre-wrap text-zinc-400"
+        >
+          <span className="mr-2 font-medium text-zinc-300">
+            Hint {index + 1}.
+          </span>
+          {hint.content}
+        </p>
       ))}
 
       {isChoice ? (
         <div className="relative mt-8 min-h-0 flex-1">
           {canScrollUp && (
             <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex h-10 items-start justify-center bg-gradient-to-b from-[#09090B] to-transparent pt-1">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 15L12 9L18 15"
-                  stroke="#71717A"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <ScrollUpIcon />
             </div>
           )}
 
@@ -308,21 +283,7 @@ export const QuestionView = ({
 
           {canScrollDown && (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-10 items-end justify-center bg-gradient-to-t from-[#09090B] to-transparent pb-1">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 9L12 15L18 9"
-                  stroke="#71717A"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <ScrollDownIcon />
             </div>
           )}
         </div>

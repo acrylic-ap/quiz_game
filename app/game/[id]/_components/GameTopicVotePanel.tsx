@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useGameTopicVote } from "@/hooks/queries/game/actions/useGameTopicVote";
 import { useGameSelectedTopic } from "@/hooks/queries/game/crud/useGameSelectedTopic";
 import { useGameTopicVotes } from "@/hooks/queries/game/crud/useGameTopicVotes";
+import { VoterIcon } from "@/components/common/icons/VoterIcon";
 import { countTopicVotes, getWinningTopicIds } from "@/utils/topic";
 
 interface GameUser {
@@ -215,21 +216,7 @@ export const GameTopicVotePanel = ({
                     <div className="mt-auto px-1">
                       <div className="flex min-h-[28px] items-end gap-[10px]">
                         {voters.slice(0, 8).map((user) => (
-                          <svg
-                            key={user.id}
-                            width="18"
-                            height="22"
-                            viewBox="0 0 18 22"
-                            fill="none"
-                            aria-hidden="true"
-                          >
-                            <circle cx="9" cy="5.5" r="5.5" fill="#D4D4D8" />
-
-                            <path
-                              d="M0 21.0287C0 7.31719 18 8.07896 18 21.0287L0 21.0287Z"
-                              fill="#D4D4D8"
-                            />
-                          </svg>
+                          <VoterIcon key={user.id} />
                         ))}
                       </div>
                     </div>
