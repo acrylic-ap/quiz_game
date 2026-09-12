@@ -79,7 +79,7 @@ export async function saveTopic(topic: Topic, questions: Question[], image?: Fil
     const saved: Topic = {
       id: topic.id, topicName: topic.topicName, description: topic.description, category: topic.category,
       ownerId: user.uid, imageUrl, imagePath, updatedAt: Date.now(), questionCount: questions.length,
-      approvalStatus: requestApproval ? "pending" : "unregistered",
+      approvalStatus: "approved",
     };
     await runTransaction(db, async (transaction) => {
       const current = await transaction.get(topicRef);

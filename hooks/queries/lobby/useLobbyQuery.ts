@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { db, rtdb } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { onValue, ref } from "firebase/database";
 import { LobbyRoom } from "@/types/lobby/room";
 
@@ -9,7 +9,12 @@ export const useTopicMap = () => {
   return useQuery({
     queryKey: ["topicMap"],
     queryFn: async () => {
-      const querySnapshot = await getDocs(collection(db, "topics"));
+      const querySnapshot = await getDocs(
+        query(
+          collection(db, "topics"),
+          where("approvalStatus", "==", "approved"),
+        ),
+      );
 
       const mapping: Record<string, string> = {};
 

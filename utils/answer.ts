@@ -13,15 +13,28 @@ export const parseAnswers = (answer: string, multiple: boolean) =>
 export const normalizeAnswer = (answer: string, mode: Question["answerMatch"]) =>
   mode === "ignoreWhitespace" ? answer.replace(/\s/g, "") : answer;
 
-export const matchesAnswer = (question: Question, answer: string | null) => {
-  if (answer === null) return false;
+export const getCorrectOptionIndices = (question: Question): number[] =>
+  question.correctOptions ??
+  (question.options ?? []).flatMap((option, index) =>
+    option === question.answer ? [index] : [],
+  );
+
+export const matchesAnswer = (question: Question, answer: string | number[] | null | undefined) => {
+  if (answer == null) return false;
   if (isChoiceQuestion(question)) {
-    const candidates = question.correctOptions
-      ? question.correctOptions.map((index) => question.options?.[index])
-      : [question.answer];
-    return candidates.some((candidate) => candidate !== undefined && candidate === answer);
+    const options = question.options ?? [];
+    // 이전 게임의 문자열 제출도 단일 선택으로 읽는다.
+    const selected = Array.isArray(answer) ? answer : [options.indexOf(answer)];
+    if (selected.some((index) =>
+      !Number.isInteger(index) || index < 0 || index >= options.length
+    )) return false;
+    const expected = new Set(getCorrectOptionIndices(question));
+    const actual = new Set(selected);
+    if (question.answerType !== "multiple" && actual.size !== 1) return false;
+    return expected.size > 0 && actual.size === expected.size &&
+      [...actual].every((index) => expected.has(index));
   }
-  if (question.answer === undefined) return false;
+  if (typeof answer !== "string" || question.answer === undefined) return false;
   return parseAnswers(question.answer, question.answerType === "multiple").some(
     (candidate) => normalizeAnswer(candidate, question.answerMatch) === normalizeAnswer(answer, question.answerMatch),
   );

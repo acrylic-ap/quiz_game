@@ -129,7 +129,7 @@ export function TopicInfoEditor({
       <div className="flex min-w-0 flex-col gap-[20px]">
         <input
           className={`${inputClass} h-[58px]`}
-          placeholder="주제 제목을 입력해 주세요"
+          placeholder="주제 제목"
           aria-label="주제 제목"
           value={topic.topicName}
           onChange={(e) =>
@@ -143,7 +143,7 @@ export function TopicInfoEditor({
         <div className="relative">
           <input
             className={`${inputClass} h-[58px] pr-[58px]`}
-            placeholder="카테고리를 입력해 주세요"
+            placeholder="카테고리"
             aria-label="카테고리"
             value={topic.category}
             autoComplete="off"
@@ -250,7 +250,7 @@ export function TopicInfoEditor({
 
         <textarea
           className={`${inputClass} min-h-0 flex-1 resize-none py-[17px]`}
-          placeholder="주제 설명을 입력해 주세요"
+          placeholder="주제 설명"
           aria-label="주제 설명"
           value={topic.description}
           onChange={(e) =>

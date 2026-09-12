@@ -1,8 +1,16 @@
 import { GameRankingEntry, GameSubmission } from "@/types/game/game";
 import { matchesAnswer } from "@/utils/answer";
+import { Hint } from "@/types/topic/topic";
 
 export const QUESTION_TIME_LIMIT_MS = 30_000;
 export const PHASE_TRANSITION_MS = 10_000;
+
+export const getVisibleHints = (hints: Hint[], remainingSeconds: number | null) =>
+  hints.filter((hint) =>
+    remainingSeconds !== null &&
+    hint.revealTime !== undefined &&
+    remainingSeconds <= hint.revealTime,
+  ).sort((left, right) => (right.revealTime ?? 0) - (left.revealTime ?? 0));
 
 const DIFFICULTY_MULTIPLIER: Record<number, number> = {
   1: 0.8,

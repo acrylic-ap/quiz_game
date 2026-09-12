@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGamePlayActions } from "@/hooks/queries/game/actions/useGamePlayActions";
 import { Game } from "@/types/game/game";
 import { Question } from "@/types/topic/topic";
-import { isChoiceQuestion, matchesAnswer } from "@/utils/answer";
+import { getCorrectOptionIndices, isChoiceQuestion } from "@/utils/answer";
 import { PhaseCountdown, PhaseNextButton } from "./PhaseTransition";
 
 interface ResultViewProps {
@@ -45,9 +45,11 @@ export const ResultView = ({
   const isTimeout = submission?.status === "timeout";
   const isCorrect = submission?.isCorrect === true;
 
-  const getChoiceStyle = (option: string) => {
-    const isCorrectAnswer = matchesAnswer(question, option);
-    const isMyAnswer = option === submission?.answer;
+  const getChoiceStyle = (index: number) => {
+    const isCorrectAnswer = getCorrectOptionIndices(question).includes(index);
+    const isMyAnswer = Array.isArray(submission?.answer)
+      ? submission.answer.includes(index)
+      : question.options?.[index] === submission?.answer;
 
     // 정답 선지
     if (isCorrectAnswer) {
@@ -172,13 +174,13 @@ export const ResultView = ({
             "
           >
             <div className="flex flex-col gap-4 py-1">
-              {question.options?.map((option) => (
+              {question.options?.map((option, index) => (
                 <div
-                  key={option}
+                  key={index}
                   className={`
                     flex min-h-[60px] w-full shrink-0 items-center
                     rounded-lg px-6 py-3.5 text-[16px]
-                    ${getChoiceStyle(option)}
+                    ${getChoiceStyle(index)}
                   `}
                 >
                   {option}
@@ -222,7 +224,7 @@ export const ResultView = ({
                     : "bg-[#3A1417]"
               }`}
             >
-              {isTimeout ? "시간 초과" : submission?.answer}
+              {isTimeout ? "시간 초과" : typeof submission?.answer === "string" ? submission.answer : ""}
             </div>
           </div>
 

@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { ref, runTransaction, serverTimestamp } from "firebase/database";
 
 import { rtdb } from "@/lib/firebase";
-import { GameRoundPlayer } from "@/types/game/game";
+import { GameRoundPlayer, GameSubmission } from "@/types/game/game";
 import {
   PHASE_TRANSITION_MS,
   QUESTION_TIME_LIMIT_MS,
@@ -24,12 +24,12 @@ export const useGamePlayActions = (
       `room_sessions/${roomId}/game/round/players/${userId}`,
     );
 
+    const startedAt = Date.now();
+
     const result = await runTransaction(playerRef, (currentPlayer) => {
       if (currentPlayer) {
         return currentPlayer;
       }
-
-      const startedAt = Date.now();
 
       return {
         startedAt,
@@ -41,7 +41,7 @@ export const useGamePlayActions = (
   }, [roomId, userId]);
 
   const submitAnswer = useCallback(
-    async (answer: string, player: GameRoundPlayer) => {
+    async (answer: NonNullable<GameSubmission["answer"]>, player: GameRoundPlayer) => {
       if (!roomId || !userId) {
         return;
       }

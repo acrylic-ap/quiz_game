@@ -93,7 +93,7 @@ export default function TopicModal() {
             <input
               type="text"
               id="room-name"
-              placeholder="2자 이상 입력해 주세요"
+              placeholder="2자 이상 입력"
               className="w-[85%] text-zinc-100
               pl-3 py-3
               outline-none

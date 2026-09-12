@@ -7,6 +7,7 @@ import { useGamePlayActions } from "@/hooks/queries/game/actions/useGamePlayActi
 import { Game } from "@/types/game/game";
 import { Question } from "@/types/topic/topic";
 import { isChoiceQuestion } from "@/utils/answer";
+import { getVisibleHints } from "@/utils/game";
 
 import { GameUser } from "./types";
 import { useRemainingSeconds } from "./useRemainingSeconds";
@@ -33,6 +34,7 @@ export const QuestionView = ({
   );
 
   const [answer, setAnswer] = useState("");
+  const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
 
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
@@ -81,6 +83,7 @@ export const QuestionView = ({
   }, [question.id, question.type]);
 
   const isChoice = isChoiceQuestion(question);
+  const isMultipleChoice = isChoice && question.answerType === "multiple";
 
   const updateScrollGuide = () => {
     const element = scrollRef.current;
@@ -133,24 +136,32 @@ export const QuestionView = ({
     );
   }
 
-  const canSubmit = answer.length > 0 && remainingSeconds !== 0;
+  const canSubmit = (isChoice ? selectedOptions.length > 0 : answer.length > 0) &&
+    remainingSeconds !== null && remainingSeconds > 0;
 
   const handleSubmit = () => {
     if (!canSubmit) {
       return;
     }
 
-    void submitAnswer(answer, player);
+    void submitAnswer(isChoice ? selectedOptions : answer, player);
   };
 
-  const handleChoice = (option: string) => {
-    if (answer === option) {
-      void submitAnswer(option, player);
+  const handleChoice = (index: number) => {
+    if (remainingSeconds === null || remainingSeconds <= 0) return;
+    if (isMultipleChoice) {
+      setSelectedOptions((current) => current.includes(index)
+        ? current.filter((value) => value !== index)
+        : [...current, index]);
+      return;
+    }
+    if (selectedOptions.includes(index)) {
+      void submitAnswer([index], player);
 
       return;
     }
 
-    setAnswer(option);
+    setSelectedOptions([index]);
   };
 
   const handleReplaySound = () => {
@@ -229,9 +240,7 @@ export const QuestionView = ({
         </div>
       )}
 
-      {(question.hints ?? []).filter((hint) =>
-        hint.revealTime !== undefined && remainingSeconds !== null && remainingSeconds <= hint.revealTime,
-      ).sort((a, b) => (b.revealTime ?? 0) - (a.revealTime ?? 0)).map((hint, index) => (
+      {getVisibleHints(question.hints ?? [], remainingSeconds).map((hint, index) => (
         <p key={hint.id ?? index} className="mt-3 whitespace-pre-wrap text-zinc-400">{hint.content}</p>
       ))}
 
@@ -267,18 +276,19 @@ export const QuestionView = ({
             "
           >
             <div className="flex flex-col gap-4 py-1 pb-10">
-              {question.options?.map((option) => (
+              {question.options?.map((option, index) => (
                 <button
-                  key={option}
+                  key={index}
                   type="button"
-                  onClick={() => handleChoice(option)}
+                  aria-pressed={selectedOptions.includes(index)}
+                  onClick={() => handleChoice(index)}
                   className={`
                     min-h-[60px] w-full shrink-0 px-6 py-3.5 text-left
                     rounded-lg
                     text-[16px]
                     transition
                     ${
-                      answer === option
+                      selectedOptions.includes(index)
                         ? "bg-zinc-700 text-zinc-100"
                         : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
                     }
@@ -288,7 +298,7 @@ export const QuestionView = ({
                 </button>
               ))}
 
-              {answer && (
+              {!isMultipleChoice && selectedOptions.length > 0 && (
                 <p className="text-right text-sm text-zinc-500">
                   선택한 답을 한 번 더 누르면 제출됩니다.
                 </p>
@@ -352,6 +362,19 @@ export const QuestionView = ({
               <CornerDownLeft size={32} strokeWidth={2} />
             </button>
           </div>
+        </div>
+      )}
+      {isMultipleChoice && (
+        <div className="flex shrink-0 items-center justify-end gap-4 pt-4">
+          <p className="text-sm text-zinc-500">정답을 모두 선택한 뒤 제출해 주세요.</p>
+          <button
+            type="button"
+            disabled={!canSubmit}
+            onClick={handleSubmit}
+            className="rounded-lg bg-zinc-800 px-6 py-3 text-zinc-200 disabled:opacity-40"
+          >
+            정답 제출
+          </button>
         </div>
       )}
     </div>

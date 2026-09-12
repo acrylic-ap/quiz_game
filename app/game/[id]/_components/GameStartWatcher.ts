@@ -10,6 +10,7 @@ import { useGameSelectedTopic } from "@/hooks/queries/game/crud/useGameSelectedT
 import { useGameTopicVotes } from "@/hooks/queries/game/crud/useGameTopicVotes";
 import { useTopicQuestions } from "@/hooks/queries/topic/crud/useTopicQuestions";
 import { shuffle } from "@/utils/random";
+import { buildGameQuestionList } from "@/utils/gameQuestions";
 import {
   VOTE_TIE_BREAK_DURATION_MS,
   countTopicVotes,
@@ -220,17 +221,7 @@ export const GameStartWatcher = ({
 
     savingQuestionList.current = true;
 
-    const questionCount =
-      lastRound === 60
-        ? topicQuestions.length
-        : Math.min(lastRound, topicQuestions.length);
-
-    const randomizedQuestionList = shuffle(topicQuestions)
-      .slice(0, questionCount)
-      .map((question) => ({
-        ...question,
-        options: question.options ? shuffle(question.options) : question.options,
-      }));
+    const randomizedQuestionList = buildGameQuestionList(topicQuestions, lastRound);
 
     saveQuestionList(randomizedQuestionList, {
       onError: () => {
@@ -269,6 +260,7 @@ export const GameStartWatcher = ({
 
     return () => {
       window.clearTimeout(timer);
+      started.current = false;
     };
   }, [decision, isOwner, questionList.length, changeGameStatus]);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ref, runTransaction } from "firebase/database";
+import { ref, runTransaction, serverTimestamp } from "firebase/database";
 
 import { rtdb } from "@/lib/firebase";
 import { Game } from "@/types/game/game";
@@ -79,7 +79,11 @@ export const GameRoundHostWatcher = ({
     const gameRef = ref(rtdb, `room_sessions/${roomId}/game`);
 
     void runTransaction(gameRef, (currentGame) => {
-      if (!currentGame || currentGame.phase !== "question") {
+      if (
+        !currentGame ||
+        currentGame.phase !== "question" ||
+        currentGame.currentRound !== game.currentRound
+      ) {
         return;
       }
 
@@ -144,6 +148,7 @@ export const GameRoundHostWatcher = ({
         round: {
           ...currentGame.round,
           submissions: gradedSubmissions,
+          resultNextRequestedAt: serverTimestamp(),
         },
         ranking,
       };
@@ -181,16 +186,15 @@ export const GameRoundHostWatcher = ({
           return;
         }
 
-        const isLastRound =
-          currentGame.currentRound >= currentGame.questionList.length - 1;
-
         return {
           ...currentGame,
-          phase: isLastRound ? "final" : "ranking",
+          phase: "ranking",
           round: {
             ...currentGame.round,
             resultNextRequestedAt: null,
             resultNextReady: null,
+            rankingNextRequestedAt: serverTimestamp(),
+            rankingNextReady: null,
           },
         };
       });
@@ -234,6 +238,21 @@ export const GameRoundHostWatcher = ({
           currentGame.round?.rankingNextRequestedAt !== requestedAt
         ) {
           return;
+        }
+
+        const isLastRound =
+          currentGame.currentRound >= currentGame.questionList.length - 1;
+
+        if (isLastRound) {
+          return {
+            ...currentGame,
+            phase: "final",
+            round: {
+              ...currentGame.round,
+              rankingNextRequestedAt: null,
+              rankingNextReady: null,
+            },
+          };
         }
 
         return {
