@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/queries/common/account/useAuth";
 import { useRoomList } from "@/hooks/queries/lobby/useLobbyQuery";
 import { useRoomNavigation } from "@/hooks/queries/room/actions/useRoomNavigation";
 import { LobbyRoom } from "@/types/lobby/room";
-import RoomCodeModal from "@/app/components/modals/RoomCodeModal";
+import RoomCodeModal from "@/app/components/main/RoomCodeModal";
 import { useSetAtom } from "jotai";
 import { Button } from "@/components/ui/button";
 

@@ -142,12 +142,12 @@ export function TopicEditor({
 
       {/* 주제 탭에서만 표시 */}
       {tab === "topic" && (
-        <div className="flex shrink-0 justify-center gap-[18px] pb-[22px]">
+        <div className="flex shrink-0 justify-center gap-[18px] pb-10">
           <Button
             variant="secondary"
             className="
               h-[50px]
-              min-w-[180px]
+              min-w-[160px]
               rounded-[8px]
               text-[16px]
             "
@@ -160,7 +160,7 @@ export function TopicEditor({
             variant="secondary"
             className="
               h-[50px]
-              min-w-[180px]
+              min-w-[160px]
               rounded-[8px]
               text-[16px]
             "

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { XIcon } from "lucide-react";
+import { useSetAtom } from "jotai";
 
 import {
   Dialog,
@@ -12,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { alertModalState } from "@/atoms/modalAtom";
 
 import { auth } from "@/lib/firebase";
 import {
@@ -55,12 +57,12 @@ export default function TopicSettingsModal({
   const [image, setImage] = useState<File>();
   const [preview, setPreview] = useState("");
 
-  const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   const [deleting, setDeleting] = useState<Topic | null>(null);
 
   const client = useQueryClient();
+  const setAlertModal = useSetAtom(alertModalState);
   const userId = auth.currentUser?.uid;
 
   const list = useQuery({
@@ -91,13 +93,20 @@ export default function TopicSettingsModal({
     };
   }, [preview]);
 
-  const report = (e: unknown) => {
-    setError(
-      e instanceof Error
-        ? e.message
-        : "처리하지 못했습니다. 다시 시도해주세요.",
-    );
-  };
+  const report = useCallback(
+    (e: unknown) => {
+      setAlertModal(
+        e instanceof Error
+          ? e.message
+          : "처리하지 못했습니다. 다시 시도해주세요.",
+      );
+    },
+    [setAlertModal],
+  );
+
+  useEffect(() => {
+    if (list.error) report(list.error);
+  }, [list.error, report]);
 
   const refresh = () =>
     Promise.all([
@@ -114,7 +123,7 @@ export default function TopicSettingsModal({
 
   const edit = async (existing?: Topic) => {
     setBusy(true);
-    setError("");
+    setAlertModal(null);
 
     try {
       const loaded = existing ? await loadQuestions(existing.id) : [];
@@ -149,7 +158,7 @@ export default function TopicSettingsModal({
     if (!topic || busy) return;
 
     setBusy(true);
-    setError("");
+    setAlertModal(null);
 
     try {
       const saved = await saveTopic(topic, questions, image, requestApproval);
@@ -175,7 +184,7 @@ export default function TopicSettingsModal({
     setQuestions([]);
     setImage(undefined);
     setPreview("");
-    setError("");
+    setAlertModal(null);
   };
 
   const close = (value: boolean) => {
@@ -272,7 +281,7 @@ export default function TopicSettingsModal({
                 void edit();
               }}
               onManage={() => {
-                setError("");
+                setAlertModal(null);
                 setScreen("manage");
               }}
             />
@@ -334,7 +343,10 @@ export default function TopicSettingsModal({
                 <TopicManager
                   topics={list.data ?? []}
                   loading={list.isLoading}
-                  error={list.error as Error | null}
+                  failed={list.isError}
+                  onCreate={() => {
+                    void edit();
+                  }}
                   onEdit={(t) => {
                     void edit(t);
                   }}
@@ -343,12 +355,6 @@ export default function TopicSettingsModal({
               )}
             </fieldset>
           </>
-        )}
-
-        {error && (
-          <p role="alert" className="shrink-0 px-[40px] pb-[16px] text-red-400">
-            {error}
-          </p>
         )}
 
         <TopicDeleteDialog
@@ -363,7 +369,7 @@ export default function TopicSettingsModal({
             }
 
             setBusy(true);
-            setError("");
+            setAlertModal(null);
 
             try {
               await removeTopic(deleting);
